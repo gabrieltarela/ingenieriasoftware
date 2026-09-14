@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consigna y Solución - Vista Responsiva Mobile</title>
+    <style>
+        :root {
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+
+            /* Paleta Empresarial - Tonos Pastel Oscuros */
+            --accent-rose: #881337;      /* Riesgos */
+            --accent-indigo: #312e81;    /* Ciclo de Vida */
+            --accent-teal: #134e4a;      /* Gantt */
+            --accent-purple: #4c1d95;    /* Puntos de Función */
+            --accent-amber: #78350f;     /* Modelo Espiral */
+            --accent-slate: #334155;     /* General / Botones */
+
+            --quote-red: #dc2626;        /* Color rojo de la cita */
+            --bg-subtle: #f8fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 16px 12px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+
+        /* Bloque de la Letra de la Consigna */
+        .consigna-box {
+            background: #ffffff;
+            border: 2px solid #94a3b8;
+            border-radius: 10px;
+            padding: 18px 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .consigna-box h2 {
+            font-size: 1.15rem;
+            color: var(--accent-slate);
+            margin-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+
+        .consigna-text {
+            font-size: 0.92rem;
+            color: #334155;
+            background-color: var(--bg-subtle);
+            padding: 14px 14px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-slate);
+            word-wrap: break-word;
+        }
+
+        /* Encabezado de la Solución */
+        .solution-header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .solution-title {
+            font-size: 1.25rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            text-align: center;
+            background-color: var(--accent-slate);
+            color: #ffffff;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn:active {
+            opacity: 0.85;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--accent-slate);
+            border: 1px solid var(--accent-slate);
+        }
+
+        /* Árbol Jerárquico */
+        .tree-node {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            overflow: hidden;
+        }
+
+        .tree-header {
+            padding: 12px 14px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #ffffff;
+            gap: 10px;
+        }
+
+        .tree-header-text {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .tree-header-title {
+            font-weight: 700;
+            font-size: 0.98rem;
+            line-height: 1.35;
+        }
+
+        .tree-header .arrow {
+            transition: transform 0.25s ease;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .tree-node.open > .tree-header .arrow {
+            transform: rotate(90deg);
+        }
+
+        .tree-content {
+            display: none;
+            padding: 10px 12px 16px 12px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-subtle);
+        }
+
+        .tree-node.open > .tree-content {
+            display: block;
+        }
+
+        /* Colores Temáticos */
+        .node-riesgos > .tree-header { border-left: 5px solid var(--accent-rose); }
+        .node-riesgos .tree-header-title { color: var(--accent-rose); }
+
+        .node-ciclo > .tree-header { border-left: 5px solid var(--accent-indigo); }
+        .node-ciclo .tree-header-title { color: var(--accent-indigo); }
+
+        .node-gantt > .tree-header { border-left: 5px solid var(--accent-teal); }
+        .node-gantt .tree-header-title { color: var(--accent-teal); }
+
+        .node-pf > .tree-header { border-left: 5px solid var(--accent-purple); }
+        .node-pf .tree-header-title { color: var(--accent-purple); }
+
+        .node-espiral > .tree-header { border-left: 5px solid var(--accent-amber); }
+        .node-espiral .tree-header-title { color: var(--accent-amber); }
+
+        /* Cita Roja sobre Concepto */
+        .quote-tag {
+            color: var(--quote-red);
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 3px;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        /* Nodos Anidados */
+        .nested-node {
+            margin-top: 8px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .nested-header {
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nested-header-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            line-height: 1.3;
+        }
+
+        .nested-content {
+            display: none;
+            padding: 10px 12px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.88rem;
+        }
+
+        .nested-node.open > .nested-content {
+            display: block;
+        }
+
+        .nested-node.open > .nested-header .arrow {
+            transform: rotate(90deg);
+        }
+
+        .list-item-block {
+            margin-bottom: 8px;
+            list-style: none;
+        }
+
+        ul, ol {
+            padding-left: 14px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* Tabla Adaptativa para Celulares */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .gantt-table {
+            width: 100%;
+            min-width: 520px; /* Garantiza legibilidad en pantallas angostas sin apretar texto */
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            background: #ffffff;
+        }
+
+        .gantt-table th, .gantt-table td {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .gantt-table th {
+            background-color: #f1f5f9;
+            color: var(--accent-slate);
+            font-weight: 700;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background-color: #e2e8f0;
+            color: #334155;
+            margin-left: 4px;
+        }
+
+        /* Estilos Pantallas Medianas y Grandes (Tablets/Escritorio) */
+        @media (min-width: 640px) {
+            body {
+                padding: 28px 20px;
+            }
+
+            .solution-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .controls {
+                width: auto;
+            }
+
+            .btn {
+                flex: initial;
+                padding: 8px 16px;
+            }
+
+            .consigna-box h2 {
+                font-size: 1.25rem;
+            }
+
+            .consigna-text {
+                font-size: 0.95rem;
+                padding: 16px 20px;
+            }
+
+            .tree-header-title {
+                font-size: 1.05rem;
+            }
+
+            .quote-tag {
+                font-size: 0.82rem;
+            }
+
+            .nested-header-title {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- BLOQUE 1: LETRA DE LA CONSIGNA -->
+    <div class="consigna-box">
+        <h2>📄 Letra del Ejercicio (Consigna)</h2>
+        <div class="consigna-text">
+            <p>
+                Sea un sistema de control automatizado de una planta de ensamblaje de automóviles Toyota. El desarrollo del sistema comienza en enero y finaliza en 12 meses. El cliente estará presente en todo el proceso de desarrollo, pero es posible que se ausente durante períodos que nunca serán de más de 1 mes. El sistema estará fuertemente acoplado al sistema operativo que usa Toyota, siendo la primera vez que se desarrolla un sistema del estilo fuera de Japón (aunque Toyota no se opone no brindará soporte o información).
+            </p>
+            <br>
+            <p>
+                El sistema permitirá dar de alta o baja a un vehículo, identificado por su número de chasis y motor, al inventario general. Será posible modificar la descripción del vehículo. También se podrá resetear el software que se usa en los vehículos.
+            </p>
+            <br>
+            <p>
+                <i>
+                • Identifique posibles riesgos y elabore planes de contingencia.<br>
+                • Definir un ciclo de vida adecuado para desarrollar el sistema anterior y las grandes actividades del mismo (no es necesaria una descripción detallada de las mismas).<br>
+                • Seleccione una de las etapas del plan anterior y desarrolle en profundidad el Gantt asociado.<br>
+                • Identifique Entradas, Salidas y Consultas (agrupadas) y ALI. Los números son bajos.
+                </i>
+            </p>
+        </div>
+    </div>
+
+    <!-- BLOQUE 2: SOLUCIÓN ADAPTATIVA CON CITAS ROJAS -->
+    <div class="solution-header">
+        <div class="solution-title">💡 Solución del Ejercicio</div>
+        <div class="controls">
+            <button class="btn" onclick="expandAll()">Expandir Todo</button>
+            <button class="btn btn-outline" onclick="collapseAll()">Contraer Todo</button>
+        </div>
+    </div>
+
+    <div class="tree-container">
+        
+        <!-- NODO 1: RIESGOS -->
+        <div class="tree-node node-riesgos open">
+            <div class="tree-header" onclick="toggleNode(event, this)">
+                <div class="tree-header-text">
+                    <span class="quote-tag">📌 "Identifique posibles riesgos y elabore planes de contingencia."</span>
+                    <span class="tree-header-title">⚠️ 1. Identificación de Riesgos y Planes de Contingencia</span>
+                </div>
+                <span class="arrow">▶</span>
+            </div>
+            <div class="tree-content">
+                
+                <div class="nested-node open">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "El cliente estará presente en todo el proceso de desarrollo, pero es posible que se ausente durante períodos que nunca serán de más de 1 mes."</span>
+                            <span class="nested-header-title">Riesgo 1: Ausencia temporal del cliente (períodos de hasta 1 mes)</span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <ul>
+                            <li><b>Impacto:</b> Demoras en la validación de requerimientos, decisiones operativas y aprobación de entregables.</li>
+                            <li><b>Plan de Contingencia:</b> Establecer comunicación asíncrona, acuerdos diferidos e hitos de validación antes de sus ausencias, designando un referente técnico local.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="nested-node">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "El sistema estará fuertemente acoplado al sistema operativo que usa Toyota... aunque Toyota no se opone no brindará soporte o información."</span>
+                            <span class="nested-header-title">Riesgo 2: Acoplamiento fuerte al SO Toyota sin soporte ni información</span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <ul>
+                            <li><b>Impacto:</b> Incompatibilidades de integración, ingeniería inversa y fallas en el comando de reseteo.</li>
+                            <li><b>Plan de Contingencia:</b> Desarrollar un Spike técnico inicial y diseñar una capa de interfaz aislada que desacople la dependencia directa.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="nested-node">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "...siendo la primera vez que se desarrolla un sistema del estilo fuera de Japón..."</span>
+                            <span class="nested-header-title">Riesgo 3: Primer desarrollo fuera de Japón / Desconocimiento de planta</span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <ul>
+                            <li><b>Impacto:</b> Diferencias entre el diseño conceptual y la operativa real en la línea de ensamblaje.</li>
+                            <li><b>Plan de Contingencia:</b> Relevamiento intensivo presencial en la planta durante la presencia del cliente y prototipos funcionales tempranos.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- NODO 2: CICLO DE VIDA -->
+        <div class="tree-node node-ciclo">
+            <div class="tree-header" onclick="toggleNode(event, this)">
+                <div class="tree-header-text">
+                    <span class="quote-tag">📌 "Definir un ciclo de vida adecuado para desarrollar el sistema anterior y las grandes actividades del mismo..."</span>
+                    <span class="tree-header-title">🔄 2. Ciclo de Vida y Grandes Actividades</span>
+                </div>
+                <span class="arrow">▶</span>
+            </div>
+            <div class="tree-content">
+                
+                <div class="nested-node open">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "El cliente estará presente... pero es posible que se ausente... / El sistema estará fuertemente acoplado al SO..."</span>
+                            <span class="nested-header-title">Modelo Seleccionado: Iterativo e Incremental</span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <p><b>Justificación:</b> Permite acoplar las entregas funcionales a las ventanas de presencia del cliente y mitigar progresivamente el riesgo de integración con el SO propietario.</p>
+                    </div>
+                </div>
+
+                <div class="nested-node open">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "El desarrollo del sistema comienza en enero y finaliza en 12 meses."</span>
+                            <span class="nested-header-title">Grandes Actividades del Proyecto (Duración Total: 12 Meses)</span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <ol>
+                            <li><b>Inicio y Captura de Requerimientos:</b> Atomización de requerimientos funcionales con el cliente.</li>
+                            <li><b>Análisis y Diseño Arquitectónico (Spike Técnico):</b> Diseño de la interfaz con el SO Toyota.</li>
+                            <li><b>Desarrollo Incremental e Integración:</b> Módulos de Inventario y Reseteo.</li>
+                            <li><b>Testing de Integración y Calidad:</b> Pruebas integrales de comunicación en planta.</li>
+                            <li><b>Despliegue y Puesta en Producción:</b> Instalación final en la planta y capacitación.</li>
+                        </ol>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- NODO 3: GANTT -->
+        <div class="tree-node node-gantt">
+            <div class="tree-header" onclick="toggleNode(event, this)">
+                <div class="tree-header-text">
+                    <span class="quote-tag">📌 "Seleccione una de las etapas del plan anterior y desarrolle en profundidad el Gantt asociado."</span>
+                    <span class="tree-header-title">📅 3. Diagrama de Gantt en Profundidad</span>
+                </div>
+                <span class="arrow">▶</span>
+            </div>
+            <div class="tree-content">
+                <p style="margin-top: 4px; font-size: 0.9rem;">
+                    <b>Etapa Seleccionada:</b> Desarrollo Incremental e Integración (Meses 3 a 8 - 24 semanas)
+                </p>
+                
+                <div class="table-responsive">
+                    <table class="gantt-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 12%;">ID</th>
+                                <th style="width: 50%;">Actividad / Tarea</th>
+                                <th style="width: 18%;">Duración</th>
+                                <th style="width: 20%;">Dependencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>3.1</b></td>
+                                <td>
+                                    <span class="quote-tag">📌 "...dar de alta o baja a un vehículo... al inventario general. Será posible modificar la descripción..."</span>
+                                    <b>Módulo de Gestión de Inventario General</b>
+                                </td>
+                                <td><b>8 sem.</b></td>
+                                <td>Etapa 2</td>
+                            </tr>
+                            <tr>
+                                <td>3.1.1</td>
+                                <td>
+                                    <span class="quote-tag">📌 "El sistema permitirá dar de alta o baja a un vehículo, identificado por su número de chasis y motor..."</span>
+                                    Alta y baja de vehículos (chasis y motor)
+                                </td>
+                                <td>3 sem.</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>3.1.2</td>
+                                <td>
+                                    <span class="quote-tag">📌 "Será posible modificar la descripción del vehículo."</span>
+                                    Modificación de descripción de vehículos
+                                </td>
+                                <td>2 sem.</td>
+                                <td>3.1.1</td>
+                            </tr>
+                            <tr>
+                                <td>3.1.3</td>
+                                <td>Pruebas unitarias y persistencia del inventario</td>
+                                <td>3 sem.</td>
+                                <td>3.1.2</td>
+                            </tr>
+                            <tr>
+                                <td><b>3.2</b></td>
+                                <td>
+                                    <span class="quote-tag">📌 "El sistema estará fuertemente acoplado al SO... También se podrá resetear el software..."</span>
+                                    <b>Módulo de Reseteo y Acoplamiento al SO</b>
+                                </td>
+                                <td><b>12 sem.</b></td>
+                                <td>3.1.3</td>
+                            </tr>
+                            <tr>
+                                <td>3.2.1</td>
+                                <td>
+                                    <span class="quote-tag">📌 "El sistema estará fuertemente acoplado al sistema operativo que usa Toyota..."</span>
+                                    Desarrollo de capa de interfaz con SO Toyota
+                                </td>
+                                <td>4 sem.</td>
+                                <td>3.1.3</td>
+                            </tr>
+                            <tr>
+                                <td>3.2.2</td>
+                                <td>
+                                    <span class="quote-tag">📌 "También se podrá resetear el software que se usa en los vehículos."</span>
+                                    Implementación del comando de reseteo de software
+                                </td>
+                                <td>4 sem.</td>
+                                <td>3.2.1</td>
+                            </tr>
+                            <tr>
+                                <td>3.2.3</td>
+                                <td>Pruebas de integración con el SO en vehículos</td>
+                                <td>4 sem.</td>
+                                <td>3.2.2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- NODO 4: PUNTOS DE FUNCIÓN -->
+        <div class="tree-node node-pf">
+            <div class="tree-header" onclick="toggleNode(event, this)">
+                <div class="tree-header-text">
+                    <span class="quote-tag">📌 "Identifique Entradas, Salidas y Consultas (agrupadas) y ALI. Los números son bajos."</span>
+                    <span class="tree-header-title">📊 4. Componentes de Puntos de Función (PF)</span>
+                </div>
+                <span class="arrow">▶</span>
+            </div>
+            <div class="tree-content">
+                
+                <div class="nested-node open">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "Identifique Entradas, Salidas y Consultas (agrupadas)..."</span>
+                            <span class="nested-header-title">Entradas Externas (EE) <span class="badge">Total: 4</span></span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <ul>
+                            <li class="list-item-block">
+                                <span class="quote-tag">📌 "El sistema permitirá dar de alta o baja a un vehículo, identificado por su número de chasis y motor..."</span>
+                                • Alta de vehículo (chasis y motor)
+                            </li>
+                            <li class="list-item-block">
+                                <span class="quote-tag">📌 "...dar de alta o baja a un vehículo..."</span>
+                                • Baja de vehículo
+                            </li>
+                            <li class="list-item-block">
+                                <span class="quote-tag">📌 "Será posible modificar la descripción del vehículo."</span>
+                                • Modificación de descripción de vehículo
+                            </li>
+                            <li class="list-item-block">
+                                <span class="quote-tag">📌 "También se podrá resetear el software que se usa en los vehículos."</span>
+                                • Comando de reseteo de software
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="nested-node open">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "Identifique Entradas, Salidas y Consultas (agrupadas)..."</span>
+                            <span class="nested-header-title">Salidas y Consultas Externas (SE/CE Agrupadas) <span class="badge">Total: 2</span></span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <ul>
+                            <li class="list-item-block">
+                                <span class="quote-tag">📌 "...al inventario general."</span>
+                                • Consulta / Visualización del inventario general
+                            </li>
+                            <li class="list-item-block">
+                                <span class="quote-tag">📌 "También se podrá resetear el software que se usa en los vehículos."</span>
+                                • Confirmación / Reporte de estado del reseteo
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="nested-node open">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "Identifique... y ALI. Los números son bajos."</span>
+                            <span class="nested-header-title">Archivo Lógico Interno (ALI) <span class="badge">Total: 1</span></span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <ul>
+                            <li class="list-item-block">
+                                <span class="quote-tag">📌 "...al inventario general."</span>
+                                • ALI Inventario General de Vehículos
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="nested-node open">
+                    <div class="nested-header" onclick="toggleNode(event, this)">
+                        <div>
+                            <span class="quote-tag">📌 "El sistema estará fuertemente acoplado al sistema operativo que usa Toyota..."</span>
+                            <span class="nested-header-title">Archivo de Interfaz Externa (AIE) <span class="badge">Total: 1</span></span>
+                        </div>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="nested-content">
+                        <ul>
+                            <li class="list-item-block">
+                                <span class="quote-tag">📌 "El sistema estará fuertemente acoplado al sistema operativo que usa Toyota..."</span>
+                                • AIE Sistema Operativo Toyota
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- NODO 5: ESPIRAL -->
+        <div class="tree-node node-espiral">
+            <div class="tree-header" onclick="toggleNode(event, this)">
+                <div class="tree-header-text">
+                    <span class="quote-tag">📌 "Definir un ciclo de vida adecuado..."</span>
+                    <span class="tree-header-title">❌ 5. Justificación: ¿Por qué NO elegir Modelo en Espiral?</span>
+                </div>
+                <span class="arrow">▶</span>
+            </div>
+            <div class="tree-content">
+                <ul>
+                    <li class="list-item-block">
+                        <span class="quote-tag">📌 "Los números son bajos."</span>
+                        <b>Alcance acotado:</b> El proyecto involucra pocos Puntos de Función; la gestión de un ciclo en espiral resulta desproporcionada.
+                    </li>
+                    <li class="list-item-block">
+                        <span class="quote-tag">📌 "El cliente estará presente... pero es posible que se ausente durante períodos que nunca serán de más de 1 mes."</span>
+                        <b>Ausencias del cliente:</b> La evaluación continua de riesgos en espiral exige constante presencia del cliente, la cual se bloquearía en sus ausencias.
+                    </li>
+                    <li class="list-item-block">
+                        <span class="quote-tag">📌 "El sistema estará fuertemente acoplado al sistema operativo que usa Toyota..."</span>
+                        <b>Riesgo técnico puntual:</b> El acoplamiento se resuelve eficientemente con una prueba de concepto inicial (Spike) sin iteraciones en espiral indefinidas.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function toggleNode(event, header) {
+        event.stopPropagation();
+        const node = header.closest('.tree-node, .nested-node');
+        if (node) {
+            node.classList.toggle('open');
+        }
+    }
+
+    function expandAll() {
+        document.querySelectorAll('.tree-node, .nested-node').forEach(node => node.classList.add('open'));
+    }
+
+    function collapseAll() {
+        document.querySelectorAll('.tree-node, .nested-node').forEach(node => node.classList.remove('open'));
+    }
+</script>
+
+</body>
+</html>
