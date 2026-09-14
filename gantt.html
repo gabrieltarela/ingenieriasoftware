@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma de Actividades — Plan de Proyecto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F6F7F9;
+    --panel: #FFFFFF;
+    --ink: #1F2430;
+    --ink-soft: #5B6270;
+    --hairline: #E3E6EB;
+
+    --gestion-fill: #D9EEE7;
+    --gestion-fill-strong: #AEDBCB;
+    --gestion-accent: #29816A;
+
+    --analisis-fill: #FBE7D2;
+    --analisis-fill-strong: #F4C696;
+    --analisis-accent: #C77A2B;
+
+    --diseno-fill: #E7E1F6;
+    --diseno-fill-strong: #C9B9EE;
+    --diseno-accent: #6E4FC2;
+
+    --today: #D6455D;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page{
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 56px 40px 80px;
+  }
+
+  header.masthead{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 32px;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 28px;
+    margin-bottom: 8px;
+  }
+
+  header.masthead h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 1.1;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+
+  header.masthead .sub{
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 560px;
+    line-height: 1.55;
+  }
+
+  .meta-block{
+    text-align: right;
+    font-size: 13px;
+    color: var(--ink-soft);
+    min-width: 220px;
+  }
+  .meta-block div{ margin-bottom: 6px; }
+  .meta-block b{ color: var(--ink); font-weight: 600; }
+
+  .legend{
+    display:flex;
+    gap: 26px;
+    flex-wrap: wrap;
+    margin: 26px 0 30px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .legend .item{ display:flex; align-items:center; gap:8px; }
+  .swatch{ width:14px; height:14px; border-radius:4px; display:inline-block; }
+  .swatch.gestion{ background: var(--gestion-fill-strong); }
+  .swatch.analisis{ background: var(--analisis-fill-strong); }
+  .swatch.diseno{ background: var(--diseno-fill-strong); }
+  .swatch.milestone{ width:10px; height:10px; border-radius:2px; background:var(--ink); transform: rotate(45deg); }
+  .swatch.today{ width:2px; height:14px; background: var(--today); border-radius:0; }
+
+  .chart-shell{
+    background: var(--panel);
+    border-radius: 16px;
+    border: 1px solid var(--hairline);
+    box-shadow: 0 1px 2px rgba(31,36,48,0.04), 0 12px 32px -18px rgba(31,36,48,0.18);
+    overflow: hidden;
+  }
+
+  .chart-scroll{
+    overflow-x: auto;
+  }
+
+  .grid-wrap{
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    min-width: 1040px;
+  }
+
+  /* LEFT LABEL COLUMN */
+  .label-col{
+    border-right: 1px solid var(--hairline);
+  }
+  .label-col .head-cell{
+    height: 62px;
+    display:flex;
+    align-items:center;
+    padding: 0 20px;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--hairline);
+    position: sticky;
+    top:0;
+    background: var(--panel);
+  }
+  .phase-row{
+    padding: 14px 20px 8px;
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    font-weight: 500;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    border-bottom: 1px solid var(--hairline);
+    background: #FBFBFC;
+  }
+  .phase-row .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .task-row-label{
+    height: 46px;
+    display:flex;
+    flex-direction: column;
+    justify-content:center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .task-row-label .name{ font-size: 13px; font-weight: 500; line-height:1.25; }
+  .task-row-label .deliv{ font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; }
+  .task-row-label .id{ color: var(--ink-soft); font-weight: 400; }
+
+  /* RIGHT TIMELINE COLUMN */
+  .timeline-col{ position: relative; }
+  .timeline-head{
+    height: 62px;
+    position: relative;
+    border-bottom: 1px solid var(--hairline);
+    position: sticky;
+    top:0;
+    background: var(--panel);
+    z-index: 3;
+  }
+  .month-band{
+    position:absolute;
+    top:0; height: 28px;
+    display:flex; align-items:center;
+    padding-left: 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+    border-left: 1px solid var(--hairline);
+  }
+  .week-tick{
+    position:absolute;
+    top:30px; height: 32px;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    padding-left: 6px;
+    border-left: 1px solid var(--hairline);
+    display:flex; align-items:center;
+  }
+
+  .timeline-body{ position: relative; }
+  .grid-lines .line{
+    position:absolute; top:0; bottom:0; border-left: 1px solid var(--hairline); opacity: 0.6;
+  }
+  .grid-lines .line.weekend{ background: rgba(31,36,48,0.025); border-left: none; }
+
+  .task-row-bar{
+    height: 46px;
+    position: relative;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .bar{
+    position:absolute;
+    top: 10px;
+    height: 26px;
+    border-radius: 8px;
+    display:flex;
+    align-items:center;
+    padding: 0 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 1px 0 rgba(31,36,48,0.05), 0 4px 10px -6px rgba(31,36,48,0.35);
+  }
+  .bar.gestion{ background: var(--gestion-fill); color: #1B5C49; border: 1px solid var(--gestion-fill-strong); }
+  .bar.analisis{ background: var(--analisis-fill); color: #8A4E15; border: 1px solid var(--analisis-fill-strong); }
+  .bar.diseno{ background: var(--diseno-fill); color: #4A3489; border: 1px solid var(--diseno-fill-strong); }
+
+  .milestone-marker{
+    position:absolute;
+    top: 6px;
+    width: 13px; height:13px;
+    background: var(--ink);
+    transform: translateX(-50%) rotate(45deg);
+    border-radius: 3px;
+    box-shadow: 0 3px 8px -2px rgba(31,36,48,0.5);
+    z-index: 2;
+  }
+  .milestone-label{
+    position:absolute;
+    top: 24px;
+    transform: translateX(-50%);
+    font-size: 10.5px;
+    color: var(--ink);
+    font-weight: 600;
+    white-space: nowrap;
+    text-align:center;
+  }
+
+  .today-line{
+    position:absolute;
+    top:0; bottom:0;
+    width: 2px;
+    background: var(--today);
+    z-index: 2;
+  }
+  .today-label{
+    position:absolute;
+    top: -20px;
+    transform: translateX(-50%);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--today);
+    white-space: nowrap;
+  }
+
+  footer.foot{
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    display:flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  @media (max-width: 720px){
+    .page{ padding: 32px 16px 60px; }
+    header.masthead{ flex-direction: column; align-items: flex-start; }
+    .meta-block{ text-align:left; }
+    header.masthead h1{ font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <h1>Cronograma de Actividades</h1>
+      <div class="sub">Desglose del Trabajo (WBS) — ciclo de vida Sashimi con solapamiento de fases, desde la iniciación hasta el cierre de la etapa de diseño.</div>
+    </div>
+    <div class="meta-block">
+      <div>Inicio del proyecto: <b>27 ago 2026</b></div>
+      <div>Entrega documento único: <b>10 oct 2026</b></div>
+      <div>Hito de aprobación: <b>11 sep 2026</b></div>
+    </div>
+  </header>
+
+  <div class="legend">
+    <div class="item"><span class="swatch gestion"></span>Gestión e Iniciación</div>
+    <div class="item"><span class="swatch analisis"></span>Análisis</div>
+    <div class="item"><span class="swatch diseno"></span>Diseño</div>
+    <div class="item"><span class="swatch milestone"></span>Hito de aprobación</div>
+    <div class="item"><span class="swatch today"></span>Fecha actual</div>
+  </div>
+
+  <div class="chart-shell">
+    <div class="chart-scroll">
+      <div class="grid-wrap" id="gridWrap">
+
+        <div class="label-col" id="labelCol">
+          <div class="head-cell">ENTREGABLE / ACTIVIDAD</div>
+        </div>
+
+        <div class="timeline-col">
+          <div class="timeline-head" id="timelineHead"></div>
+          <div class="timeline-body" id="timelineBody">
+            <div class="grid-lines" id="gridLines"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span>Modelo de ciclo de vida: Sashimi (cascada con solapamiento) — fases contiguas se superponen para retroalimentación continua en tutorías semanales.</span>
+  </footer>
+
+</div>
+
+<script>
+const DAY_PX = 24;
+
+const phases = [
+  {
+    key: 'gestion',
+    name: 'Gestión e Iniciación',
+    tasks: [
+      { id:'1.1', name:'Relevamiento con Interesados', deliv:'Síntesis de Interesados', start:'2026-08-27', end:'2026-09-08' },
+      { id:'1.2', name:'Estudio de Viabilidad', deliv:'Documento de Viabilidad', start:'2026-09-02', end:'2026-09-11' },
+      { id:'1.3', name:'Definición de Roles', deliv:'Documento de Roles de Equipo', start:'2026-08-31', end:'2026-09-09' },
+      { id:'1.4', name:'Matriz FODA', deliv:'Matriz FODA', start:'2026-09-04', end:'2026-09-08' },
+      { id:'1.5', name:'Plan de Riesgos y Contingencias', deliv:'Plan de Riesgos y Contingencias', start:'2026-09-04', end:'2026-09-11' },
+    ]
+  },
+  {
+    key: 'analisis',
+    name: 'Análisis',
+    tasks: [
+      { id:'2.1', name:'Elicitación de Requerimientos Funcionales', deliv:'Documento de Requerimientos Funcionales', start:'2026-09-11', end:'2026-09-21' },
+      { id:'2.2', name:'Definición de Requerimientos No Funcionales', deliv:'Documento de Requerimientos No Funcionales', start:'2026-09-14', end:'2026-09-24' },
+      { id:'2.3', name:'Redacción de Especificación de Requerimientos', deliv:'Documento ERS', start:'2026-09-17', end:'2026-09-24' },
+      { id:'2.4', name:'Modelado de Casos de Uso', deliv:'Diagrama de Casos de Uso', start:'2026-09-14', end:'2026-09-24' },
+    ]
+  },
+  {
+    key: 'diseno',
+    name: 'Diseño',
+    tasks: [
+      { id:'3.1', name:'Prototipado Figma', deliv:'Mockups Figma interactivos', start:'2026-09-15', end:'2026-09-25' },
+      { id:'3.2', name:'Arquitectura e Integración BigBlueButton', deliv:'Modelo Arquitectónico e Integración BigBlueButton', start:'2026-09-20', end:'2026-09-25' },
+      { id:'3.3', name:'Diagrama de Componentes', deliv:'Diagrama de Componentes', start:'2026-09-25', end:'2026-09-30' },
+      { id:'3.4', name:'Diagrama de Despliegue', deliv:'Diagrama de Despliegue', start:'2026-09-30', end:'2026-10-05' },
+      { id:'3.5', name:'Revisión Final e Integración del Entregable', deliv:'Documento Entregable Final', start:'2026-10-05', end:'2026-10-10' },
+    ]
+  }
+];
+
+const milestone = { name: 'Aprobación del Estudio de Viabilidad', date: '2026-09-11' };
+const today = '2026-09-14';
+
+function parseDate(s){ const [y,m,d]=s.split('-').map(Number); return new Date(Date.UTC(y,m-1,d)); }
+function dayDiff(a,b){ return Math.round((parseDate(b)-parseDate(a))/86400000); }
+
+let minDate = phases[0].tasks[0].start;
+let maxDate = phases[0].tasks[0].end;
+phases.forEach(p=>p.tasks.forEach(t=>{
+  if (parseDate(t.start) < parseDate(minDate)) minDate = t.start;
+  if (parseDate(t.end) > parseDate(maxDate)) maxDate = t.end;
+}));
+
+const totalDays = dayDiff(minDate, maxDate) + 1;
+const chartWidth = totalDays * DAY_PX;
+
+document.getElementById('timelineHead').style.width = chartWidth + 'px';
+document.getElementById('timelineBody').style.width = chartWidth + 'px';
+document.getElementById('gridLines').style.width = chartWidth + 'px';
+
+// month bands
+const head = document.getElementById('timelineHead');
+let cursor = parseDate(minDate);
+const end = parseDate(maxDate);
+while (cursor <= end) {
+  const monthStart = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), 1));
+  const nextMonth = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth()+1, 1));
+  const bandStart = monthStart < parseDate(minDate) ? parseDate(minDate) : monthStart;
+  const bandEnd = nextMonth > end ? new Date(end.getTime()+86400000) : nextMonth;
+  const left = dayDiff(minDate, bandStart.toISOString().slice(0,10)) * DAY_PX;
+  const width = dayDiff(bandStart.toISOString().slice(0,10), bandEnd.toISOString().slice(0,10)) * DAY_PX;
+  const div = document.createElement('div');
+  div.className = 'month-band';
+  div.style.left = left + 'px';
+  div.style.width = width + 'px';
+  const monthNames = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  div.textContent = monthNames[cursor.getUTCMonth()] + ' ' + cursor.getUTCFullYear();
+  head.appendChild(div);
+  cursor = nextMonth;
+}
+
+// week ticks every 7 days from minDate
+for (let d = 0; d < totalDays; d += 7) {
+  const dt = new Date(parseDate(minDate).getTime() + d*86400000);
+  const div = document.createElement('div');
+  div.className = 'week-tick';
+  div.style.left = (d*DAY_PX) + 'px';
+  div.style.width = (7*DAY_PX) + 'px';
+  div.textContent = String(dt.getUTCDate()).padStart(2,'0') + '/' + String(dt.getUTCMonth()+1).padStart(2,'0');
+  head.appendChild(div);
+}
+
+// vertical grid lines (weekly) + weekend shading (per day)
+const gridLines = document.getElementById('gridLines');
+for (let d = 0; d <= totalDays; d++) {
+  const dt = new Date(parseDate(minDate).getTime() + d*86400000);
+  const dow = dt.getUTCDay();
+  if (dow === 0 || dow === 6) {
+    const shade = document.createElement('div');
+    shade.className = 'line weekend';
+    shade.style.left = (d*DAY_PX) + 'px';
+    shade.style.width = DAY_PX + 'px';
+    gridLines.appendChild(shade);
+  }
+  if (d % 7 === 0) {
+    const line = document.createElement('div');
+    line.className = 'line';
+    line.style.left = (d*DAY_PX) + 'px';
+    gridLines.appendChild(line);
+  }
+}
+
+// build label column + bars
+const labelCol = document.getElementById('labelCol');
+const timelineBody = document.getElementById('timelineBody');
+
+phases.forEach(phase => {
+  const phaseRow = document.createElement('div');
+  phaseRow.className = 'phase-row';
+  phaseRow.innerHTML = '<span class="dot" style="background:var(--' + phase.key + '-accent)"></span>' + phase.name;
+  labelCol.appendChild(phaseRow);
+
+  const phaseSpacer = document.createElement('div');
+  phaseSpacer.style.height = phaseRow.offsetHeight ? '' : '';
+  phaseSpacer.className = 'task-row-bar';
+  phaseSpacer.style.height = '39px';
+  phaseSpacer.style.background = '#FBFBFC';
+  timelineBody.appendChild(phaseSpacer);
+
+  phase.tasks.forEach(t => {
+    const lbl = document.createElement('div');
+    lbl.className = 'task-row-label';
+    lbl.innerHTML = '<div class="name"><span class="id">' + t.id + '</span> — ' + t.name + '</div><div class="deliv">' + t.deliv + '</div>';
+    labelCol.appendChild(lbl);
+
+    const row = document.createElement('div');
+    row.className = 'task-row-bar';
+
+    const left = dayDiff(minDate, t.start) * DAY_PX;
+    const width = (dayDiff(t.start, t.end) + 1) * DAY_PX;
+
+    const bar = document.createElement('div');
+    bar.className = 'bar ' + phase.key;
+    bar.style.left = left + 'px';
+    bar.style.width = Math.max(width, 40) + 'px';
+    bar.textContent = t.id;
+    bar.title = t.name + ' (' + t.start + ' → ' + t.end + ')';
+    row.appendChild(bar);
+
+    timelineBody.appendChild(row);
+  });
+});
+
+// milestone marker (spans full body height)
+const bodyHeight = timelineBody.scrollHeight || (phases.reduce((a,p)=>a+p.tasks.length,0) * 46 + phases.length * 39);
+const msLeft = dayDiff(minDate, milestone.date) * DAY_PX + DAY_PX/2;
+
+const msLine = document.createElement('div');
+msLine.style.position = 'absolute';
+msLine.style.top = '0';
+msLine.style.bottom = '0';
+msLine.style.left = msLeft + 'px';
+msLine.style.width = '1px';
+msLine.style.borderLeft = '1px dashed rgba(31,36,48,0.35)';
+msLine.style.zIndex = '1';
+timelineBody.appendChild(msLine);
+
+const msMarker = document.createElement('div');
+msMarker.className = 'milestone-marker';
+msMarker.style.left = msLeft + 'px';
+timelineBody.appendChild(msMarker);
+
+const msLabel = document.createElement('div');
+msLabel.className = 'milestone-label';
+msLabel.style.left = msLeft + 'px';
+msLabel.textContent = milestone.name;
+timelineBody.appendChild(msLabel);
+
+// today line
+const todayLeft = dayDiff(minDate, today) * DAY_PX;
+const todayLine = document.createElement('div');
+todayLine.className = 'today-line';
+todayLine.style.left = todayLeft + 'px';
+timelineBody.appendChild(todayLine);
+
+const todayLabel = document.createElement('div');
+todayLabel.className = 'today-label';
+todayLabel.style.left = todayLeft + 'px';
+todayLabel.textContent = 'HOY';
+timelineBody.appendChild(todayLabel);
+</script>
+
+</body>
+</html>
