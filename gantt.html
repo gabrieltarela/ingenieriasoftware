@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma · Plataforma Educativa ANEP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F3ED;
+    --paper-raised:#FBFAF6;
+    --ink:#1E232B;
+    --ink-soft:#5B6270;
+    --rule:#DAD5C7;
+    --rule-strong:#C2BCAA;
+    --analisis:#2F5D62;
+    --analisis-soft:#DCE7E6;
+    --disenio:#6B4226;
+    --disenio-soft:#E9DFD5;
+    --amber:#B9791F;
+    --amber-soft:#F1DCB8;
+    --today:#B4483B;
+    --focus:#2F5D62;
+    --shadow: 0 1px 0 rgba(30,35,43,0.06);
+  }
+  [data-theme="dark"], :root:not([data-theme="light"]) {
+    /* default remains light for this document-style artifact, but respect system dark mode subtly */
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; background:var(--paper); color:var(--ink);
+    font-family:'Spectral', Georgia, serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; }
+
+  /* ===== Header ===== */
+  header.top{
+    padding:28px clamp(16px,3vw,40px) 18px;
+    border-bottom:1px solid var(--rule-strong);
+    background:var(--paper-raised);
+  }
+  .eyebrow-row{
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  h1{
+    margin:0; font-size:clamp(22px,2.6vw,30px); font-weight:600; letter-spacing:-0.01em;
+  }
+  .subtitle{
+    margin:4px 0 0; color:var(--ink-soft); font-size:14.5px; max-width:60ch;
+  }
+  .meta-strip{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft);
+    text-align:right; line-height:1.6;
+  }
+  .meta-strip b{ color:var(--ink); font-weight:600; }
+
+  /* ===== Toolbar ===== */
+  .toolbar{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    padding:14px clamp(16px,3vw,40px);
+    border-bottom:1px solid var(--rule);
+    background:var(--paper);
+    position:sticky; top:0; z-index:40;
+  }
+  .tgroup{ display:flex; align-items:center; gap:8px; }
+  .tgroup-label{ font-size:11px; text-transform:none; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; }
+  button.chip, select.chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    border:1px solid var(--rule-strong);
+    background:var(--paper-raised);
+    color:var(--ink);
+    padding:6px 11px;
+    border-radius:3px;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  button.chip:hover{ border-color:var(--focus); }
+  button.chip.active{ background:var(--analisis); border-color:var(--analisis); color:#fff; }
+  select.chip{ cursor:pointer; }
+  .divider{ width:1px; height:22px; background:var(--rule-strong); }
+  .legend{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-left:auto;
+    font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;
+  }
+  .legend-item{ display:flex; align-items:center; gap:6px; }
+  .swatch{ width:14px; height:10px; border-radius:2px; display:inline-block; }
+  .swatch.hatch{
+    background-image:repeating-linear-gradient(45deg, var(--amber) 0 3px, var(--amber-soft) 3px 6px);
+    border:1px solid var(--amber);
+  }
+  .swatch.dash{
+    background:transparent; border:1.5px dashed var(--ink-soft);
+  }
+
+  /* ===== Main layout ===== */
+  .board-wrap{ display:flex; width:100%; overflow:hidden; }
+  .tree-col{
+    flex:0 0 auto;
+    width:min(38vw, 430px);
+    border-right:1px solid var(--rule-strong);
+    background:var(--paper-raised);
+    overflow-y:hidden;
+  }
+  .chart-col{
+    flex:1 1 auto;
+    overflow-x:auto;
+    overflow-y:hidden;
+    position:relative;
+  }
+  .scroll-body{
+    display:flex;
+    max-height: calc(100vh - 132px);
+  }
+  .tree-col .scroller, .chart-col .scroller{
+    overflow-y:auto;
+    max-height: calc(100vh - 132px);
+  }
+  .tree-col .scroller::-webkit-scrollbar{ width:0; height:0; }
+
+  /* Sticky header pieces */
+  .tree-head{
+    height:52px; display:flex; align-items:center; padding:0 16px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft);
+    border-bottom:1px solid var(--rule-strong);
+    background:var(--paper-raised);
+    position:sticky; top:0; z-index:10;
+  }
+  .chart-head{
+    position:sticky; top:0; z-index:10; background:var(--paper-raised);
+    border-bottom:1px solid var(--rule-strong);
+  }
+
+  /* Tree rows */
+  .row{
+    display:flex; align-items:center;
+    border-bottom:1px solid var(--rule);
+    height:34px;
+    white-space:nowrap;
+  }
+  .row.etapa-row{ background:#EFEBDF; height:38px; font-weight:600; }
+  .row.actividad-row{ background:#F6F4EC; }
+  .row.tarea-row:hover{ background:#EFEDE3; }
+  .row.dimmed{ opacity:0.25; }
+
+  .twisty{
+    width:16px; height:16px; flex:0 0 16px; margin-right:6px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--ink-soft); font-size:10px;
+    user-select:none;
+    transition:transform .15s ease;
+  }
+  .twisty.collapsed{ transform:rotate(-90deg); }
+  .twisty.leaf{ visibility:hidden; }
+
+  .indent-0{ padding-left:14px; }
+  .indent-1{ padding-left:34px; }
+  .indent-2{ padding-left:54px; }
+
+  .row-label{
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px;
+  }
+  .row.etapa-row .row-label{ font-size:14px; letter-spacing:0.01em; }
+  .row-count{
+    margin-left:8px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); font-weight:400;
+  }
+  .stage-dot{
+    width:8px; height:8px; border-radius:50%; margin-right:9px; flex:0 0 8px;
+  }
+  .assignee-chip{
+    margin-left:8px; font-family:'IBM Plex Mono',monospace; font-size:10px;
+    padding:1px 6px; border-radius:20px; color:#fff; flex:0 0 auto;
+  }
+  .status-tag{
+    margin-left:auto; margin-right:12px; font-family:'IBM Plex Mono',monospace; font-size:9.5px;
+    color:var(--ink-soft); flex:0 0 auto;
+  }
+
+  /* Chart grid */
+  .grid-canvas{ position:relative; }
+  .day-col{
+    position:absolute; top:0; bottom:0; border-right:1px solid var(--rule);
+  }
+  .day-col.weekend{ background:rgba(90,80,60,0.045); }
+  .month-band{
+    position:absolute; top:0; height:22px; border-bottom:1px solid var(--rule-strong);
+    display:flex; align-items:center; padding-left:8px;
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft);
+    border-right:1px solid var(--rule-strong);
+  }
+  .day-label{
+    position:absolute; top:22px; height:30px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--ink-soft);
+    border-right:1px solid var(--rule);
+  }
+  .day-label .dow{ font-size:8px; opacity:.7; }
+  .today-line{
+    position:absolute; top:0; bottom:0; width:2px; background:var(--today); z-index:8;
+  }
+  .today-flag{
+    position:absolute; top:52px; transform:translateX(-50%);
+    background:var(--today); color:#fff; font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px; padding:1px 5px; border-radius:2px; white-space:nowrap; z-index:9;
+  }
+
+  .chart-row{
+    position:relative; height:34px; border-bottom:1px solid var(--rule);
+  }
+  .chart-row.etapa-row{ height:38px; background:rgba(90,80,60,0.03); }
+  .chart-row.actividad-row{ background:rgba(90,80,60,0.015); }
+  .chart-row.dimmed{ opacity:0.2; }
+
+  .band-bar{
+    position:absolute; top:50%; transform:translateY(-50%);
+    height:8px; border-radius:4px;
+  }
+  .band-bar.etapa{ background:var(--stage-color, var(--analisis)); opacity:.35; height:10px; }
+  .band-bar.actividad{ background:var(--stage-color, var(--analisis)); opacity:.28; height:6px; }
+
+  .task-bar{
+    position:absolute; top:5px; height:24px; border-radius:4px;
+    display:flex; align-items:center; gap:6px; padding:0 8px;
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#fff;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    border:1px solid rgba(0,0,0,0.12);
+    overflow:hidden;
+    min-width:6px;
+  }
+  .task-bar .init{
+    width:16px; height:16px; border-radius:50%; flex:0 0 16px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:8.5px; font-weight:600; background:rgba(255,255,255,0.28);
+  }
+  .task-bar .tname{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .task-bar.status-finalizada{ }
+  .task-bar.status-revision{
+    background-image:repeating-linear-gradient(45deg, rgba(255,255,255,0.16) 0 6px, rgba(255,255,255,0) 6px 12px);
+    outline:2px solid var(--amber);
+    outline-offset:-2px;
+  }
+  .task-bar.status-sincomenzar{
+    background:var(--paper-raised) !important;
+    color:var(--ink-soft) !important;
+    border:1.5px dashed var(--ink-soft);
+    box-shadow:none;
+  }
+  .task-bar.status-sincomenzar .init{ background:rgba(0,0,0,0.06); color:var(--ink-soft); }
+  .task-bar.estimado::after{
+    content:'';
+  }
+
+  /* Tooltip */
+  #tooltip{
+    position:fixed; z-index:200; max-width:300px;
+    background:var(--ink); color:#F5F3ED;
+    border-radius:6px; padding:12px 14px; font-size:12px; line-height:1.5;
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    pointer-events:none; opacity:0; transition:opacity .1s ease;
+  }
+  #tooltip.show{ opacity:1; }
+  #tooltip h4{ margin:0 0 4px; font-family:'Spectral',serif; font-size:13.5px; font-weight:600; color:#fff; }
+  #tooltip .trail{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#B7BFC9; margin-bottom:8px; }
+  #tooltip dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:2px 10px; }
+  #tooltip dt{ color:#9AA3AF; font-family:'IBM Plex Mono',monospace; font-size:10px; }
+  #tooltip dd{ margin:0; }
+  #tooltip .obs{ margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.14); color:#D8DCE1; }
+
+  footer.note{
+    padding:10px clamp(16px,3vw,40px); font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    color:var(--ink-soft); border-top:1px solid var(--rule); background:var(--paper-raised);
+  }
+
+  @media (max-width: 720px){
+    .tree-col{ width:190px; }
+    .meta-strip{ display:none; }
+    .legend{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="eyebrow-row">
+    <div>
+      <h1>Cronograma de desarrollo — Plataforma Educativa</h1>
+      <p class="subtitle">Vista jerárquica: Etapa → Actividad → Tarea. La línea de tiempo manda la secuencia; cada barra muestra a quién fue asignada la tarea.</p>
+    </div>
+    <div class="meta-strip">
+      <div>FUENTE&nbsp;&nbsp;<b>Tareas.xlsx</b></div>
+      <div>HOY&nbsp;&nbsp;<b id="metaToday">—</b></div>
+      <div>TAREAS&nbsp;&nbsp;<b id="metaCount">—</b></div>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="tgroup">
+    <span class="tgroup-label">ÁRBOL</span>
+    <button class="chip" id="btnExpand">Expandir todo</button>
+    <button class="chip" id="btnCollapse">Colapsar todo</button>
+  </div>
+  <div class="divider"></div>
+  <div class="tgroup">
+    <span class="tgroup-label">ZOOM</span>
+    <button class="chip" data-zoom="18">S</button>
+    <button class="chip active" data-zoom="28">M</button>
+    <button class="chip" data-zoom="42">L</button>
+  </div>
+  <div class="divider"></div>
+  <div class="tgroup">
+    <span class="tgroup-label">ASIGNADO</span>
+    <select class="chip" id="filterAssignee">
+      <option value="">Todos</option>
+    </select>
+  </div>
+  <div class="divider"></div>
+  <div class="tgroup">
+    <label style="display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);cursor:pointer;">
+      <input type="checkbox" id="toggleEstimado" checked style="accent-color:var(--analisis);">
+      Incluir tareas sin fecha (estimado)
+    </label>
+  </div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="board-wrap">
+  <div class="tree-col">
+    <div class="tree-head">JERARQUÍA DEL PROYECTO</div>
+    <div class="scroller" id="treeScroller">
+      <div id="treeBody"></div>
+    </div>
+  </div>
+  <div class="chart-col" id="chartCol">
+    <div class="chart-head" id="chartHead"></div>
+    <div class="scroller" id="chartScroller">
+      <div class="grid-canvas" id="chartBody"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="note">
+  Barras sólidas = tarea finalizada · trama diagonal + contorno ámbar = en revisión · contorno punteado = sin comenzar · las tareas sin fecha registrada se ubican de forma secuencial al final, marcadas como estimado.
+</footer>
+
+<div id="tooltip"></div>
+
+<script>
+const DATA = {"minDate": "2026-09-04", "maxRealDate": "2026-09-17", "maxDate": "2026-11-03", "today": "2026-09-17", "hierarchy": [{"etapa": "Analisis", "actividades": [{"actividad": "Relevamiento a los Interesados", "tareas": [{"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Formular Preguntas a Inspectores", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-05T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-05T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-05", "end": "2026-09-05", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Formular Preguntas a Docentes", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-05T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-06T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-05", "end": "2026-09-06", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Formular Preguntas a Director", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-05T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-06T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-05", "end": "2026-09-06", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Formular Preguntas a Docentes", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-05T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-06T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-05", "end": "2026-09-06", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Formular Preguntas a Tecnicos", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-05T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-06T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-05", "end": "2026-09-06", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Responder Cuestionaro a Inspectores", "estado": "Finalizada", "situacion": "Validado", "asignado": "Lucia", "fecha_asignada": "2026-09-05T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-06T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-05", "end": "2026-09-06", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Responder Cuestionario a Docentes", "estado": "Finalizada", "situacion": "Validado", "asignado": "Lucia", "fecha_asignada": "2026-09-05T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-06T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-05", "end": "2026-09-06", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Responder Cuestionario a Cliente", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-04T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-06T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-04", "end": "2026-09-06", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Responder Cuestionario a Tecnicos", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-04T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": "2026-09-06T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-04", "end": "2026-09-06", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Responder Cuestionario a Directores", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-09T00:00:00", "fecha_vencim": "2026-09-10T00:00:00", "fecha_entrega": "2026-09-10T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-09", "end": "2026-09-10", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Sintesis Entrevistas", "estado": "Finalizada", "situacion": "En Revision", "asignado": "Luciano", "fecha_asignada": "2026-09-09T00:00:00", "fecha_vencim": "2026-09-11T00:00:00", "fecha_entrega": "2026-09-11T00:00:00", "observaciones": "Gabriel comento el documento", "origen": "Sintesis comunicacion con los interesados", "start": "2026-09-09", "end": "2026-09-11", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Sintesis Entrevistas", "estado": "Finalizada", "situacion": "En Revision", "asignado": "Lucia", "fecha_asignada": "2026-09-09T00:00:00", "fecha_vencim": "2026-09-11T00:00:00", "fecha_entrega": "2026-09-11T00:00:00", "observaciones": "Gabriel comento el documento. Originalmente tarea de Luciano, como no se veían los avances esperados Lucía lo inició, dividiendo la realización de la tarea (sintesis comunicacion con el cliente, en cuanto a lo competencial, interfaz)", "origen": "Sintesis comunicacion con los interesados", "start": "2026-09-09", "end": "2026-09-11", "hasDate": true}, {"etapa": "Analisis", "actividad": "Relevamiento a los Interesados", "tarea": "Analisis de Plataformas Existentes", "estado": "Finalizada", "situacion": "Validado", "asignado": "Lucia", "fecha_asignada": "2026-09-09T00:00:00", "fecha_vencim": "2026-09-11T00:00:00", "fecha_entrega": "2026-09-11T00:00:00", "observaciones": null, "origen": "Analisis sobre otras plataformas educativas", "start": "2026-09-09", "end": "2026-09-11", "hasDate": true}]}, {"actividad": "Estudio de Viabilidad", "tareas": [{"etapa": "Analisis", "actividad": "Estudio de Viabilidad", "tarea": "Revision Analisis de Plataformas Exis.", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-11T00:00:00", "fecha_vencim": "2026-09-11T00:00:00", "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-11", "end": "2026-09-11", "hasDate": true}, {"etapa": "Analisis", "actividad": "Estudio de Viabilidad", "tarea": "Revision Analisis de Plataformas Exis.", "estado": "Finalizada", "situacion": "Validado", "asignado": "Lucía", "fecha_asignada": "2026-09-11T00:00:00", "fecha_vencim": "2026-09-11T00:00:00", "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-11", "end": "2026-09-11", "hasDate": true}, {"etapa": "Analisis", "actividad": "Estudio de Viabilidad", "tarea": "Crear Estudio de Viabilidad", "estado": "Finalizada", "situacion": "Validado", "asignado": "Lucia", "fecha_asignada": "2026-09-06T00:00:00", "fecha_vencim": "2026-09-06T00:00:00", "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-06", "end": "2026-09-06", "hasDate": true}]}, {"actividad": "Definicion de Roles", "tareas": [{"etapa": "Analisis", "actividad": "Definicion de Roles", "tarea": "Crear Definicion de Roles", "estado": "Finalizada", "situacion": "Validado", "asignado": "Luciano", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-18", "end": "2026-09-19", "hasDate": false}]}, {"actividad": "Matriz FODA", "tareas": [{"etapa": "Analisis", "actividad": "Matriz FODA", "tarea": "Matriz FODA", "estado": "Finalizada", "situacion": "Validado", "asignado": "Lucia", "fecha_asignada": "2026-09-06T00:00:00", "fecha_vencim": "2026-09-07T00:00:00", "fecha_entrega": "2026-09-07T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-06", "end": "2026-09-07", "hasDate": true}]}, {"actividad": "Plan de Riesgos y Contingencias", "tareas": [{"etapa": "Analisis", "actividad": "Plan de Riesgos y Contingencias", "tarea": "Plan de Riesgos y Contingencias", "estado": "Finalizada", "situacion": "En Revision", "asignado": "Ignacio", "fecha_asignada": "2026-09-09T00:00:00", "fecha_vencim": "2026-09-10T00:00:00", "fecha_entrega": "2026-09-10T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-09", "end": "2026-09-10", "hasDate": true}]}, {"actividad": "Gestion", "tareas": [{"etapa": "Analisis", "actividad": "Gestion", "tarea": "Eleccion del Ciclo de Vida", "estado": "Finalizada", "situacion": "Validado", "asignado": "Lucia", "fecha_asignada": "2026-09-09T00:00:00", "fecha_vencim": "2026-09-09T00:00:00", "fecha_entrega": "2026-09-09T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-09", "end": "2026-09-09", "hasDate": true}, {"etapa": "Analisis", "actividad": "Gestion", "tarea": "Eleccion del Ciclo de Vida", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-09T00:00:00", "fecha_vencim": "2026-09-09T00:00:00", "fecha_entrega": "2026-09-09T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-09", "end": "2026-09-09", "hasDate": true}, {"etapa": "Analisis", "actividad": "Gestion", "tarea": "Plan de Proyecto", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-12T00:00:00", "fecha_vencim": "2026-09-14T00:00:00", "fecha_entrega": "2026-09-14T00:00:00", "observaciones": "Se valido. Se solicita desglosar las tareas en tareas mas pequenias", "origen": "PLANIFICACION DE LA GESTION DEL TIEMPO ( Calendarizacion ) Cronograma del Proyecto", "start": "2026-09-12", "end": "2026-09-14", "hasDate": true}, {"etapa": "Analisis", "actividad": "Gestion", "tarea": "Reorganizacion de Estructura de Carpetas", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-12T00:00:00", "fecha_vencim": "2026-09-12T00:00:00", "fecha_entrega": "2026-09-12T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-12", "end": "2026-09-12", "hasDate": true}, {"etapa": "Analisis", "actividad": "Gestion", "tarea": "Reestructuracion de la Planilla de Tareas", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-12T00:00:00", "fecha_vencim": "2026-09-13T00:00:00", "fecha_entrega": "2026-09-13T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-12", "end": "2026-09-13", "hasDate": true}, {"etapa": "Analisis", "actividad": "Gestion", "tarea": "Agregar Subtareas al Plan de Proyecto", "estado": "Finalizada", "situacion": "Validado", "asignado": "Gabriel", "fecha_asignada": "2026-09-17T00:00:00", "fecha_vencim": "2026-09-18T00:00:00", "fecha_entrega": "2026-09-17T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-17", "end": "2026-09-17", "hasDate": true}]}, {"actividad": "Requerimientos Funcionales", "tareas": [{"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "Redaccion de Funcionalidades del Sistema", "estado": "Finalizada", "situacion": "En Revision", "asignado": "Ignacio", "fecha_asignada": "2026-09-11T00:00:00", "fecha_vencim": "2026-09-18T00:00:00", "fecha_entrega": "2026-09-17T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-11", "end": "2026-09-17", "hasDate": true}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "Redaccion de Funcionalidades del Sistema", "estado": "Finalizada", "situacion": "En Revision", "asignado": "Luciano", "fecha_asignada": "2026-09-11T00:00:00", "fecha_vencim": "2026-09-18T00:00:00", "fecha_entrega": "2026-09-17T00:00:00", "observaciones": null, "origen": null, "start": "2026-09-11", "end": "2026-09-17", "hasDate": true}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "Conciliar Diferencias entre los interesados", "estado": "Finalizada", "situacion": "En Revision", "asignado": "Gabriel", "fecha_asignada": "2026-09-17T00:00:00", "fecha_vencim": "2026-09-17T00:00:00", "fecha_entrega": null, "observaciones": "1. A resolver: Diferencias entre Adscriptos y DOE: En cuestionario de Directores se solicita dar acceso amplio a Adscriptos y equipos interdisciplinarios, otro dice  que esto genera redundancia con el Portafolio Docente ya existente de ANEP y puede percibirse como sobre-auditoría. \n2. Evaluación competencial opcional: Asegurarse de que en los Requerimientos Funcionales la vinculación de tareas a competencias sea opcional y no obligatoria, permitiendo también actividades tradicionales, foros y listas de cotejo. ", "origen": null, "start": "2026-09-17", "end": "2026-09-17", "hasDate": true}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "RF Perfil Cliente", "estado": "Sin Comenzar", "situacion": null, "asignado": "Gabriel", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-20", "end": "2026-09-21", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "RF Perfil Director", "estado": "Sin Comenzar", "situacion": "_", "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-22", "end": "2026-09-23", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "RF Perfil Inspector", "estado": "Sin Comenzar", "situacion": null, "asignado": null, "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-24", "end": "2026-09-25", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "RF Perfil Docente", "estado": "Sin Comenzar", "situacion": null, "asignado": null, "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-26", "end": "2026-09-27", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "RF Perfil Estudiante", "estado": "Sin Comenzar", "situacion": null, "asignado": null, "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-28", "end": "2026-09-29", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "RF Perfil Tecnicos", "estado": "Sin Comenzar", "situacion": "_", "asignado": "Gabriel", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-09-30", "end": "2026-10-01", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos Funcionales", "tarea": "RNOF Perfil Cliente", "estado": "Sin Comenzar", "situacion": "_", "asignado": "Gabriel", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-02", "end": "2026-10-03", "hasDate": false}]}, {"actividad": "Requerimientos NO Funcionales", "tareas": [{"etapa": "Analisis", "actividad": "Requerimientos NO Funcionales", "tarea": "RNOF Perfil Director", "estado": "Sin Comenzar", "situacion": "_", "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-04", "end": "2026-10-05", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos NO Funcionales", "tarea": "RNOF Perfil Inspector", "estado": "Sin Comenzar", "situacion": null, "asignado": null, "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-06", "end": "2026-10-07", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos NO Funcionales", "tarea": "RNOF Perfil Docente", "estado": "Sin Comenzar", "situacion": null, "asignado": null, "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-08", "end": "2026-10-09", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos NO Funcionales", "tarea": "RNOF Perfil Estudiante", "estado": "Sin Comenzar", "situacion": null, "asignado": null, "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-10", "end": "2026-10-11", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos NO Funcionales", "tarea": "RNOF Perfil Tecnicos", "estado": "Sin Comenzar", "situacion": null, "asignado": null, "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-12", "end": "2026-10-13", "hasDate": false}, {"etapa": "Analisis", "actividad": "Requerimientos NO Funcionales", "tarea": "RNOF Perfil Docente", "estado": "Sin Comenzar", "situacion": null, "asignado": null, "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-14", "end": "2026-10-15", "hasDate": false}]}, {"actividad": "Redaccion ESRE", "tareas": [{"etapa": "Analisis", "actividad": "Redaccion ESRE", "tarea": "Redaccion de RF", "estado": "Sin Comenzar", "situacion": "_", "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-16", "end": "2026-10-17", "hasDate": false}, {"etapa": "Analisis", "actividad": "Redaccion ESRE", "tarea": "Redaccion de RNF", "estado": "Sin Comenzar", "situacion": "_", "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-18", "end": "2026-10-19", "hasDate": false}]}, {"actividad": "Modelado de Casos de Uso", "tareas": [{"etapa": "Analisis", "actividad": "Modelado de Casos de Uso", "tarea": "Modelado de Casos de Uso", "estado": "Sin Comenzar", "situacion": "_", "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-20", "end": "2026-10-21", "hasDate": false}]}]}, {"etapa": "Disenio", "actividades": [{"actividad": "Prototipado Figma", "tareas": [{"etapa": "Disenio", "actividad": "Prototipado Figma", "tarea": "Prototipado Figma", "estado": "Sin Comenzar", "situacion": "_", "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-22", "end": "2026-10-23", "hasDate": false}]}, {"actividad": "Eleccion de la Arquitectura", "tareas": [{"etapa": "Disenio", "actividad": "Eleccion de la Arquitectura", "tarea": "Definicion de Arquitectura", "estado": "Sin Comenzar", "situacion": "_", "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": "Hay que explicar la elección al definirla, habíamos dicho sashimi", "origen": null, "start": "2026-10-24", "end": "2026-10-25", "hasDate": false}]}, {"actividad": "Eleccion de la Integracion", "tareas": [{"etapa": "Disenio", "actividad": "Eleccion de la Integracion", "tarea": "Integracion BigBlueButtom", "estado": "Sin Comenzar", "situacion": null, "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-26", "end": "2026-10-27", "hasDate": false}]}, {"actividad": "Diagrama de Componentes", "tareas": [{"etapa": "Disenio", "actividad": "Diagrama de Componentes", "tarea": "Diagrama de Componentes", "estado": "Sin Comenzar", "situacion": null, "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-28", "end": "2026-10-29", "hasDate": false}]}, {"actividad": "Diagrama de Despliegue", "tareas": [{"etapa": "Disenio", "actividad": "Diagrama de Despliegue", "tarea": "Diagrama de Despliegue", "estado": "Sin Comenzar", "situacion": null, "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-10-30", "end": "2026-10-31", "hasDate": false}]}, {"actividad": "Revisión Final y Unificacion del Entregable Final", "tareas": [{"etapa": "Disenio", "actividad": "Revisión Final y Unificacion del Entregable Final", "tarea": "Revision Final", "estado": "Sin Comenzar", "situacion": null, "asignado": "_", "fecha_asignada": null, "fecha_vencim": null, "fecha_entrega": null, "observaciones": null, "origen": null, "start": "2026-11-01", "end": "2026-11-02", "hasDate": false}]}]}]};
+
+const ETAPA_COLORS = {
+  'Analisis': '#2F5D62',
+  'Disenio': '#6B4226'
+};
+const ETAPA_LABELS = {
+  'Analisis': 'Análisis',
+  'Disenio': 'Diseño'
+};
+function normName(n){
+  if(!n) return null;
+  const t = n.trim();
+  if(t === '_' || t === '') return null;
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function displayName(n){
+  const norm = normName(n);
+  if(!norm) return 'Sin asignar';
+  // preserve nicer casing from original where possible
+  return n.trim() === 'Lucía' ? 'Lucía' : n.trim();
+}
+
+const ASSIGNEE_PALETTE = ['#3C6E8F','#9C6B30','#4E7A51','#7A4E6E','#4F5B99','#8C4B4B'];
+const assigneeColor = {};
+let paletteIdx = 0;
+function colorFor(person){
+  const key = normName(person) || 'Sin asignar';
+  if(key === 'Sin asignar') return '#8B8F94';
+  if(!assigneeColor[key]){
+    assigneeColor[key] = ASSIGNEE_PALETTE[paletteIdx % ASSIGNEE_PALETTE.length];
+    paletteIdx++;
+  }
+  return assigneeColor[key];
+}
+function initials(person){
+  const key = normName(person);
+  if(!key) return '·';
+  return key.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+}
+
+let DAY_WIDTH = 28;
+const ROW_H = 34;
+const ETAPA_ROW_H = 38;
+
+const minDate = new Date(DATA.minDate+'T00:00:00');
+const maxDate = new Date(DATA.maxDate+'T00:00:00');
+const todayDate = new Date(DATA.today+'T00:00:00');
+const maxRealDate = new Date(DATA.maxRealDate+'T00:00:00');
+
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+const totalDays = daysBetween(minDate, maxDate) + 3;
+
+// ---------- Build flattened row model ----------
+let uid = 0;
+const rows = []; // {id, type, level, label, etapaKey, parentIds:[], start, end, hasDate, data}
+const collapseState = {}; // id -> bool collapsed
+
+DATA.hierarchy.forEach(etapaObj => {
+  const etapaId = 'e_'+(uid++);
+  const etapaKey = etapaObj.etapa;
+  let etapaMinStart = null, etapaMaxEnd = null;
+  let taskCount = 0, doneCount = 0;
+
+  const etapaChildren = [];
+  etapaObj.actividades.forEach(actObj => {
+    const actId = 'a_'+(uid++);
+    let actMinStart=null, actMaxEnd=null;
+    const actChildren = [];
+    actObj.tareas.forEach(t => {
+      const tId = 't_'+(uid++);
+      const start = new Date(t.start+'T00:00:00');
+      const end = new Date(t.end+'T00:00:00');
+      if(etapaMinStart===null || start<etapaMinStart) etapaMinStart = start;
+      if(etapaMaxEnd===null || end>etapaMaxEnd) etapaMaxEnd = end;
+      if(actMinStart===null || start<actMinStart) actMinStart = start;
+      if(actMaxEnd===null || end>actMaxEnd) actMaxEnd = end;
+      taskCount++;
+      if(t.estado === 'Finalizada') doneCount++;
+      actChildren.push({id:tId, type:'tarea', level:2, label:t.tarea, parent:actId, etapaKey, start, end, data:t});
+    });
+    etapaChildren.push({id:actId, type:'actividad', level:1, label:actObj.actividad, parent:etapaId, etapaKey, start:actMinStart, end:actMaxEnd, children:actChildren});
+  });
+  rows.push({id:etapaId, type:'etapa', level:0, label:ETAPA_LABELS[etapaKey]||etapaKey, etapaKey, start:etapaMinStart, end:etapaMaxEnd, taskCount, doneCount, children:etapaChildren});
+  collapseState[etapaId] = false;
+  etapaChildren.forEach(a=>{ collapseState[a.id]=false; });
+});
+
+// ---------- Assignee filter options ----------
+const assigneeSet = new Set();
+DATA.hierarchy.forEach(e=> e.actividades.forEach(a=> a.tareas.forEach(t=>{
+  assigneeSet.add(displayName(t.asignado) === 'Sin asignar' ? 'Sin asignar' : displayName(t.asignado));
+})));
+const filterSel = document.getElementById('filterAssignee');
+Array.from(assigneeSet).sort().forEach(name=>{
+  const opt = document.createElement('option');
+  opt.value = name; opt.textContent = name;
+  filterSel.appendChild(opt);
+});
+
+// ---------- Legend ----------
+const legendEl = document.getElementById('legend');
+function buildLegend(){
+  let html = '';
+  Object.keys(ETAPA_COLORS).forEach(k=>{
+    html += `<span class="legend-item"><span class="swatch" style="background:${ETAPA_COLORS[k]}"></span>${ETAPA_LABELS[k]}</span>`;
+  });
+  html += `<span class="legend-item"><span class="swatch hatch"></span>En revisión</span>`;
+  html += `<span class="legend-item"><span class="swatch dash"></span>Sin comenzar</span>`;
+  legendEl.innerHTML = html;
+}
+buildLegend();
+
+// ---------- Rendering ----------
+const treeBody = document.getElementById('treeBody');
+const chartHead = document.getElementById('chartHead');
+const chartBody = document.getElementById('chartBody');
+const chartScroller = document.getElementById('chartScroller');
+const treeScroller = document.getElementById('treeScroller');
+
+function isVisible(row, ancestryCollapsed){
+  return !ancestryCollapsed;
+}
+
+function flattenVisible(){
+  const out = [];
+  rows.forEach(etapa=>{
+    out.push({row:etapa});
+    if(collapseState[etapa.id]) return;
+    etapa.children.forEach(act=>{
+      out.push({row:act});
+      if(collapseState[act.id]) return;
+      act.children.forEach(t=>{
+        out.push({row:t});
+      });
+    });
+  });
+  return out;
+}
+
+let activeFilter = '';
+let includeEstimado = true;
+
+function taskMatchesFilter(t){
+  if(!activeFilter) return true;
+  const name = displayName(t.data.asignado);
+  return name === activeFilter;
+}
+function taskMatchesEstimado(t){
+  if(includeEstimado) return true;
+  return t.data.hasDate;
+}
+
+function fmtDate(d){
+  return d.toLocaleDateString('es-UY', {day:'2-digit', month:'short'});
+}
+function fmtRange(t){
+  const s = new Date(t.data.start+'T00:00:00');
+  const e = new Date(t.data.end+'T00:00:00');
+  return fmtDate(s) + ' → ' + fmtDate(e);
+}
+
+function statusClass(estado){
+  if(estado === 'Finalizada') return 'status-finalizada';
+  if(estado === 'En Revision' || estado === 'En Revisión') return 'status-revision';
+  return 'status-sincomenzar';
+}
+
+function renderTree(){
+  const visible = flattenVisible();
+  let html = '';
+  visible.forEach(({row})=>{
+    if(row.type==='tarea' && !taskMatchesEstimado(row)) return;
+    const dimmed = row.type==='tarea' && !taskMatchesFilter(row);
+    const heightClass = row.type==='etapa' ? 'etapa-row' : (row.type==='actividad' ? 'actividad-row' : 'tarea-row');
+    const hasKids = row.type !== 'tarea';
+    const collapsed = hasKids && collapseState[row.id];
+    const indentCls = 'indent-'+row.level;
+    let inner = '';
+    if(row.type==='etapa'){
+      const pct = row.taskCount ? Math.round(100*row.doneCount/row.taskCount) : 0;
+      inner = `
+        <span class="twisty ${collapsed?'collapsed':''}" data-toggle="${row.id}">▾</span>
+        <span class="stage-dot" style="background:${ETAPA_COLORS[row.etapaKey]}"></span>
+        <span class="row-label">${row.label}</span>
+        <span class="row-count">${row.doneCount}/${row.taskCount} · ${pct}%</span>
+      `;
+    } else if(row.type==='actividad'){
+      inner = `
+        <span class="twisty ${collapsed?'collapsed':''}" data-toggle="${row.id}">▾</span>
+        <span class="row-label" title="${row.label}">${row.label}</span>
+        <span class="row-count">${row.children.length}</span>
+      `;
+    } else {
+      const person = row.data.asignado;
+      const dn = displayName(person);
+      inner = `
+        <span class="twisty leaf"></span>
+        <span class="row-label" title="${row.label}">${row.label}</span>
+        <span class="assignee-chip" style="background:${colorFor(person)}">${dn}</span>
+      `;
+    }
+    html += `<div class="row ${heightClass} ${dimmed?'dimmed':''}" data-row="${row.id}">${inner}</div>`;
+  });
+  treeBody.innerHTML = html;
+  treeBody.querySelectorAll('[data-toggle]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.getAttribute('data-toggle');
+      collapseState[id] = !collapseState[id];
+      renderAll();
+    });
+  });
+}
+
+function xForDate(d){
+  return daysBetween(minDate, d) * DAY_WIDTH;
+}
+
+function renderChartHeader(){
+  const widthPx = totalDays * DAY_WIDTH;
+  let months = [];
+  let cursor = new Date(minDate);
+  let dayLabels = '';
+  let dayCols = '';
+  let monthStartX = 0, curMonthLabel = cursor.toLocaleDateString('es-UY',{month:'long', year:'numeric'});
+  for(let i=0;i<totalDays;i++){
+    const d = new Date(minDate); d.setDate(d.getDate()+i);
+    const x = i*DAY_WIDTH;
+    const isWeekend = (d.getDay()===0 || d.getDay()===6);
+    dayCols += `<div class="day-col ${isWeekend?'weekend':''}" style="left:${x}px;width:${DAY_WIDTH}px;"></div>`;
+    const dow = d.toLocaleDateString('es-UY',{weekday:'narrow'});
+    dayLabels += `<div class="day-label" style="left:${x}px;width:${DAY_WIDTH}px;"><span class="dow">${dow}</span><span>${d.getDate()}</span></div>`;
+    const monthLabel = d.toLocaleDateString('es-UY',{month:'long', year:'numeric'});
+    if(monthLabel !== curMonthLabel){
+      months.push({label:curMonthLabel, x:monthStartX, w:x-monthStartX});
+      curMonthLabel = monthLabel; monthStartX = x;
+    }
+  }
+  months.push({label:curMonthLabel, x:monthStartX, w:totalDays*DAY_WIDTH-monthStartX});
+  let monthHtml = months.map(m=>`<div class="month-band" style="left:${m.x}px;width:${m.w}px;">${m.label}</div>`).join('');
+
+  chartHead.style.position='relative';
+  chartHead.style.height='52px';
+  chartHead.style.width = widthPx+'px';
+  chartHead.innerHTML = monthHtml + dayLabels;
+}
+
+function renderChartBody(){
+  const visible = flattenVisible().filter(({row})=> !(row.type==='tarea' && !taskMatchesEstimado(row)));
+  const widthPx = totalDays * DAY_WIDTH;
+  chartBody.style.width = widthPx+'px';
+
+  // background day columns spanning full height
+  let bg = '';
+  for(let i=0;i<totalDays;i++){
+    const d = new Date(minDate); d.setDate(d.getDate()+i);
+    const isWeekend = (d.getDay()===0 || d.getDay()===6);
+    if(isWeekend){
+      bg += `<div class="day-col weekend" style="left:${i*DAY_WIDTH}px;width:${DAY_WIDTH}px;height:100%;"></div>`;
+    }
+  }
+
+  let rowsHtml = '';
+  let curTop = 0;
+  const rowTops = [];
+  visible.forEach(({row})=>{
+    const h = row.type==='etapa' ? ETAPA_ROW_H : ROW_H;
+    rowTops.push({row, top:curTop, h});
+    curTop += h;
+  });
+  const totalHeight = curTop;
+
+  rowTops.forEach(({row, top, h})=>{
+    const rowCls = row.type==='etapa'?'etapa-row':(row.type==='actividad'?'actividad-row':'');
+    const dimmed = row.type==='tarea' && !taskMatchesFilter(row);
+    rowsHtml += `<div class="chart-row ${rowCls} ${dimmed?'dimmed':''}" style="position:absolute; top:${top}px; left:0; right:0; height:${h}px; width:${widthPx}px;">`;
+    if(row.type==='etapa' || row.type==='actividad'){
+      if(row.start && row.end){
+        const x = xForDate(row.start);
+        const w = Math.max(6, (daysBetween(row.start,row.end)+1)*DAY_WIDTH - 4);
+        rowsHtml += `<div class="band-bar ${row.type}" style="--stage-color:${ETAPA_COLORS[row.etapaKey]}; left:${x+2}px; width:${w}px;"></div>`;
+      }
+    } else {
+      const t = row.data;
+      const s = new Date(t.start+'T00:00:00');
+      const e = new Date(t.end+'T00:00:00');
+      const x = xForDate(s);
+      const w = Math.max(10, (daysBetween(s,e)+1)*DAY_WIDTH - 4);
+      const person = t.asignado;
+      const dn = displayName(person);
+      const bg2 = t.hasDate ? colorFor(person) : 'transparent';
+      const sc = statusClass(t.estado);
+      const estBadge = !t.hasDate ? ' · estimado' : '';
+      rowsHtml += `<div class="task-bar ${sc}" data-tid="${row.id}" style="left:${x+2}px; width:${w}px; background:${bg2};" data-tooltip="1">
+          <span class="init" style="${t.hasDate?'':'color:'+colorFor(person)+';'}">${initials(person)}</span>
+          <span class="tname">${t.tarea}${estBadge}</span>
+        </div>`;
+    }
+    rowsHtml += `</div>`;
+  });
+
+  // today line
+  const todayX = xForDate(todayDate);
+  let todayHtml = '';
+  if(todayX>=0 && todayX<=widthPx){
+    todayHtml = `<div class="today-line" style="left:${todayX}px; height:${totalHeight}px;"></div>`;
+  }
+
+  chartBody.style.height = totalHeight+'px';
+  chartBody.innerHTML = `<div style="position:absolute; top:0; left:0; height:${totalHeight}px; width:${widthPx}px;">${bg}</div>` + rowsHtml + todayHtml;
+
+  // tooltip bindings
+  chartBody.querySelectorAll('.task-bar').forEach(el=>{
+    el.addEventListener('mousemove', (ev)=> showTooltip(ev, el));
+    el.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+function findRowById(id){
+  for(const e of rows){
+    if(e.id===id) return e;
+    for(const a of e.children){
+      if(a.id===id) return a;
+      for(const t of a.children){ if(t.id===id) return t; }
+    }
+  }
+  return null;
+}
+
+const tooltip = document.getElementById('tooltip');
+function showTooltip(ev, el){
+  const id = el.getAttribute('data-tid');
+  const row = findRowById(id);
+  if(!row) return;
+  const t = row.data;
+  const etapaObj = rows.find(e=>e.etapaKey===row.etapaKey);
+  const actObj = etapaObj.children.find(a=> a.children.some(c=>c.id===row.id));
+  const dn = displayName(t.asignado);
+  tooltip.innerHTML = `
+    <h4>${t.tarea}</h4>
+    <div class="trail">${ETAPA_LABELS[row.etapaKey]||row.etapaKey} / ${actObj.label}</div>
+    <dl>
+      <dt>Asignado</dt><dd>${dn}</dd>
+      <dt>Estado</dt><dd>${t.estado||'—'}</dd>
+      <dt>Situación</dt><dd>${t.situacion && t.situacion!=='_' ? t.situacion : '—'}</dd>
+      <dt>Fechas</dt><dd>${t.hasDate ? fmtRange(row) : 'Sin definir (estimado)'}</dd>
+    </dl>
+    ${t.observaciones ? `<div class="obs">${t.observaciones}</div>` : ''}
+  `;
+  tooltip.classList.add('show');
+  const pad = 16;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  const rect = tooltip.getBoundingClientRect();
+  if(x + 300 > window.innerWidth) x = ev.clientX - 300 - pad;
+  if(y + rect.height > window.innerHeight) y = ev.clientY - rect.height - pad;
+  tooltip.style.left = x+'px';
+  tooltip.style.top = y+'px';
+}
+function hideTooltip(){ tooltip.classList.remove('show'); }
+
+function renderAll(){
+  renderTree();
+  renderChartHeader();
+  renderChartBody();
+  syncTreeRowHeightsToChart();
+}
+
+// keep tree rows aligned exactly to chart row heights (already same by construction)
+function syncTreeRowHeightsToChart(){
+  // heights are fixed by CSS classes; nothing else needed since both use same ROW_H/ETAPA_ROW_H logic
+}
+
+// scroll sync (vertical) between tree and chart
+chartScroller.addEventListener('scroll', ()=>{
+  treeScroller.scrollTop = chartScroller.scrollTop;
+});
+treeScroller.addEventListener('scroll', ()=>{
+  chartScroller.scrollTop = treeScroller.scrollTop;
+});
+
+// controls
+document.getElementById('btnExpand').addEventListener('click', ()=>{
+  Object.keys(collapseState).forEach(k=> collapseState[k]=false);
+  renderAll();
+});
+document.getElementById('btnCollapse').addEventListener('click', ()=>{
+  rows.forEach(e=>{ collapseState[e.id]=true; });
+  renderAll();
+});
+document.querySelectorAll('[data-zoom]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-zoom]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    DAY_WIDTH = parseInt(btn.getAttribute('data-zoom'),10);
+    renderAll();
+  });
+});
+filterSel.addEventListener('change', ()=>{
+  activeFilter = filterSel.value;
+  renderAll();
+});
+document.getElementById('toggleEstimado').addEventListener('change', (e)=>{
+  includeEstimado = e.target.checked;
+  renderAll();
+});
+
+// meta
+document.getElementById('metaToday').textContent = fmtDate(todayDate);
+let totalTasks = 0;
+DATA.hierarchy.forEach(e=> e.actividades.forEach(a=> totalTasks += a.tareas.length));
+document.getElementById('metaCount').textContent = totalTasks;
+
+renderAll();
+
+// scroll to "today" on load
+setTimeout(()=>{
+  const x = xForDate(todayDate);
+  chartScroller.scrollLeft = Math.max(0, x - 200);
+}, 50);
+</script>
+</body>
+</html>
