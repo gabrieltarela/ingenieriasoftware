@@ -2,9 +2,8 @@ name: Actualizacion Automatica desde Google Sheets
 
 on:
   schedule:
-    # Se ejecutará automáticamente todos los días a las 12:00 AM UTC
     - cron: '0 0 * * *'
-  workflow_dispatch: # Permite activarlo manualmente con un botón cuando quieras
+  workflow_dispatch:
 
 jobs:
   update-file:
@@ -16,41 +15,13 @@ jobs:
     - name: Clonar el repositorio
       uses: actions/checkout@v4
 
-    - name: Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-
-    - name: Instalar librerías necesarias
-      run: pip install requests
-
-    - name: Descargar Google Sheets como Excel
+    - name: Descargar Excel directamente
       run: |
-        python -c "
-        import requests
-        
-        # ID real de tu Hoja de Cálculo
-        SPREADSHEET_ID = '1UZZfk9muu5nYuJCYpoRueC0RLyxuYm2thrkOFnfemrY'
-        
-        # Nombre exacto del archivo en tu GitHub
-        OUTPUT_NAME = 'tareas.xlsx' 
-        
-        # URL estructurada corregida para exportar nativamente a formato Excel (.xlsx)
-        url = f'https://google.com{SPREADSHEET_ID}/export?format=xlsx'
-        
-        response = requests.get(url)
-        if response.status_code == 200:
-            with open(OUTPUT_NAME, 'wb') as f:
-                f.write(response.content)
-            print('Descarga de Excel completada con éxito.')
-        else:
-            print(f'Error al descargar: {response.status_code}')
-            exit(1)
-        "
+        curl -L -o tareas.xlsx "https://google.com"
 
     - name: Confirmar y subir cambios a GitHub
       run: |
         git config --local user.email "github-actions[bot]@://github.com"
         git config --local user.name "github-actions[bot]"
         git add tareas.xlsx
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización automática de tareas.xlsx desde Google Sheets" && git push)
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización automática de tareas.xlsx" && git push)
