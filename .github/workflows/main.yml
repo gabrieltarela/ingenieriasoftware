@@ -15,13 +15,21 @@ jobs:
     - name: Clonar el repositorio
       uses: actions/checkout@v4
 
-    - name: Descargar Excel Publico
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Instalar gdown
+      run: pip install gdown
+
+    - name: Descargar Excel con gdown
       run: |
-        curl -L -o tareas.xlsx "https://google.com"
+        gdown --id 1UZZfk9muu5nYuJCYpoRueC0RLyxuYm2thrkOFnfemrY -O tareas.xlsx --format xlsx
 
     - name: Confirmar y subir cambios a GitHub
       run: |
         git config --local user.email "github-actions[bot]@://github.com"
         git config --local user.name "github-actions[bot]"
         git add tareas.xlsx
-        git commit -m "Actualización definitiva de tareas.xlsx" && git push
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización corregida con gdown" && git push)
