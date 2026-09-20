@@ -29,7 +29,7 @@ jobs:
         python -c "
         import requests
         
-        # REEMPLAZA ESTE ID POR EL DE TU HOJA DE CÁLCULO
+        # ID real de tu Hoja de Cálculo
         SPREADSHEET_ID = '1UZZfk9muu5nYuJCYpoRueC0RLyxuYm2thrkOFnfemrY'
         
         # Nombre exacto del archivo en tu GitHub
