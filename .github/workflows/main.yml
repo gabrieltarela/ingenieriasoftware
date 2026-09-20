@@ -15,7 +15,7 @@ jobs:
     - name: Clonar el repositorio
       uses: actions/checkout@v4
 
-    - name: Descargar Excel directamente
+    - name: Descargar Excel Publico
       run: |
         curl -L -o tareas.xlsx "https://google.com"
 
@@ -24,4 +24,4 @@ jobs:
         git config --local user.email "github-actions[bot]@://github.com"
         git config --local user.name "github-actions[bot]"
         git add tareas.xlsx
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización automática de tareas.xlsx" && git push)
+        git commit -m "Actualización definitiva de tareas.xlsx" && git push
