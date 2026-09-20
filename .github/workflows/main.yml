@@ -25,7 +25,7 @@ jobs:
 
     - name: Descargar Excel con gdown
       run: |
-        gdown --id 1UZZfk9muu5nYuJCYpoRueC0RLyxuYm2thrkOFnfemrY -O tareas.xlsx --format xlsx
+        gdown 1UZZfk9muu5nYuJCYpoRueC0RLyxuYm2thrkOFnfemrY -O tareas.xlsx --format xlsx
 
     - name: Confirmar y subir cambios a GitHub
       run: |
