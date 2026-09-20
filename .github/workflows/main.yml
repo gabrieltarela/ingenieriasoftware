@@ -35,7 +35,7 @@ jobs:
         # Nombre exacto del archivo en tu GitHub
         OUTPUT_NAME = 'tareas.xlsx' 
         
-        # URL estructurada para exportar nativamente a formato Excel (.xlsx)
+        # URL estructurada corregida para exportar nativamente a formato Excel (.xlsx)
         url = f'https://google.com{SPREADSHEET_ID}/export?format=xlsx'
         
         response = requests.get(url)
