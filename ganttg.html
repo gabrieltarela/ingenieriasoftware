@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Gantt — Planilla de Tareas</title>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --panel: #ffffff;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --today: #ef4444;
+  --header-h: 52px;
+  --toolbar-h: 48px;
+  --row-h: 36px;
+  --left-w: 420px;
+  --day-w: 28px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TOOLBAR ===== */
+.toolbar {
+  height: var(--toolbar-h);
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  z-index: 30;
+}
+.version-badge {
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.count-badge {
+  background: #f1f5f9;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.count-badge strong { color: #059669; }
+.toolbar .spacer { flex: 1; }
+.btn {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .12s;
+  white-space: nowrap;
+}
+.btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn.primary:hover { background: #1d4ed8; }
+.btn.active { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+select.filter-sel {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 12px;
+  background: #fff;
+  outline: none;
+}
+label.chk {
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.zoom-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.zoom-ctrl button {
+  width: 26px; height: 26px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.zoom-ctrl button:hover { background: #f1f5f9; }
+
+/* ===== MAIN LAYOUT ===== */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* LEFT: task tree */
+.left-panel {
+  width: var(--left-w);
+  min-width: 280px;
+  max-width: 55vw;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 20;
+}
+.left-header {
+  height: var(--header-h);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  background: #f8fafc;
+  flex-shrink: 0;
+}
+.left-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.resize-handle {
+  width: 5px;
+  cursor: col-resize;
+  background: transparent;
+  position: absolute;
+  top: 0; bottom: 0;
+  left: var(--left-w);
+  z-index: 25;
+  transform: translateX(-2px);
+}
+.resize-handle:hover, .resize-handle.dragging { background: #93c5fd; }
+
+/* RIGHT: gantt timeline */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fafbfc;
+}
+.gantt-header {
+  height: var(--header-h);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  background: #f8fafc;
+  flex-shrink: 0;
+  position: relative;
+}
+.gantt-body {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+.gantt-scroll-inner {
+  position: relative;
+  min-height: 100%;
+}
+
+/* Timeline header months + days */
+.tl-months {
+  display: flex;
+  height: 22px;
+  border-bottom: 1px solid var(--border);
+}
+.tl-month {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+  background: #f1f5f9;
+}
+.tl-days {
+  display: flex;
+  height: 30px;
+}
+.tl-day {
+  width: var(--day-w);
+  min-width: var(--day-w);
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  border-right: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+.tl-day.weekend { background: #f8fafc; color: #94a3b8; }
+.tl-day.today-col { background: #fef2f2; color: var(--today); font-weight: 700; }
+
+/* Rows */
+.task-row, .gantt-row {
+  height: var(--row-h);
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.task-row:hover, .gantt-row:hover { background: #f8fafc; }
+.task-row.group { background: #f8fafc; font-weight: 600; }
+.task-row.group:hover { background: #f1f5f9; }
+.gantt-row.group { background: #f8fafc; }
+
+.task-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+.task-cell .toggle {
+  width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9px; color: var(--muted);
+  cursor: pointer; flex-shrink: 0;
+  border-radius: 3px;
+}
+.task-cell .toggle:hover { background: #e2e8f0; }
+.task-cell .toggle.open { transform: rotate(90deg); }
+.indent-0 { padding-left: 8px; }
+.indent-1 { padding-left: 24px; }
+.indent-2 { padding-left: 44px; }
+.task-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+.badge-estado {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.est-finalizada { background: #d1fae5; color: #065f46; }
+.est-enproceso { background: #fef3c7; color: #92400e; }
+.est-asignada { background: #dbeafe; color: #1e40af; }
+.est-reasignada { background: #fce7f3; color: #9d174d; }
+.est-desistida { background: #fee2e2; color: #991b1b; }
+.est-sincomenzar { background: #f1f5f9; color: #475569; }
+.est-default { background: #f1f5f9; color: #64748b; }
+
+/* Gantt bars */
+.gantt-row {
+  position: relative;
+}
+.bar {
+  position: absolute;
+  height: 18px;
+  top: 9px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+  overflow: hidden;
+  white-space: nowrap;
+  z-index: 2;
+  transition: filter .1s;
+}
+.bar:hover { filter: brightness(1.08); z-index: 5; }
+.bar.group-bar {
+  height: 10px;
+  top: 13px;
+  opacity: .45;
+  border-radius: 3px;
+}
+.bar.G { background: #3b82f6; }
+.bar.L { background: #10b981; }
+.bar.I { background: #8b5cf6; }
+.bar.U { background: #f59e0b; }
+.bar.X { background: #94a3b8; }
+.bar.estimada {
+  background: transparent !important;
+  border: 2px dashed #94a3b8;
+  color: #64748b;
+  box-shadow: none;
+}
+
+/* Today line */
+.today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--today);
+  z-index: 10;
+  pointer-events: none;
+}
+.today-label {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  background: var(--today);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* Grid lines */
+.grid-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: #f1f5f9;
+  pointer-events: none;
+}
+.grid-line.weekend { background: #f8fafc; }
+
+/* Tooltip */
+.tooltip {
+  position: fixed;
+  background: #1e293b;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 320px;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  display: none;
+}
+.tooltip strong { color: #93c5fd; }
+
+/* Legend */
+.legend {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.legend-dot {
+  width: 12px; height: 12px;
+  border-radius: 3px;
+}
+
+/* Search in toolbar */
+.search-inp {
+  padding: 6px 10px 6px 28px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 12px;
+  width: 160px;
+  outline: none;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") no-repeat 8px center;
+}
+.search-inp:focus { border-color: var(--primary); }
+
+/* Status bar bottom */
+.statusbar {
+  height: 28px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+/* Empty / loading */
+.empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ===== LOADING OVERLAY ===== */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.loading-overlay.visible {
+  display: flex;
+}
+.loading-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 36px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  text-align: center;
+  min-width: 280px;
+  max-width: 90vw;
+}
+.loading-spinner {
+  width: 42px;
+  height: 42px;
+  border: 4px solid #e2e8f0;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-card h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.loading-card p {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="version-badge" id="version-badge">VERSION: —</span>
+  <span class="count-badge"><strong id="count-num">0</strong> tareas · <span id="file-label">planilla</span></span>
+
+  <button class="btn" id="btn-load-file" title="Cargar un Excel/CSV local">📂 Cargar Excel</button>
+  <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none">
+
+  <label style="font-size:12px;color:var(--muted)">Asignado:</label>
+  <select class="filter-sel" id="filter-asignado">
+    <option value="">Todos</option>
+  </select>
+
+  <label style="font-size:12px;color:var(--muted)">Estado:</label>
+  <select class="filter-sel" id="filter-estado">
+    <option value="">Todos</option>
+  </select>
+
+  <label class="chk"><input type="checkbox" id="chk-estimadas" checked> Mostrar estimadas</label>
+
+  <input class="search-inp" id="search" placeholder="Buscar..." autocomplete="off">
+
+  <button class="btn" id="btn-expand">▼ Expandir</button>
+  <button class="btn" id="btn-collapse">▶ Colapsar</button>
+
+  <div class="zoom-ctrl">
+    Zoom:
+    <button id="zoom-out" title="Alejar">−</button>
+    <button id="zoom-in" title="Acercar">+</button>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="spacer"></div>
+  <button class="btn primary" id="btn-refresh">↻ Recargar</button>
+</div>
+
+<div class="main">
+  <div class="left-panel" id="left-panel">
+    <div class="left-header">Etapa / Actividad / Tarea</div>
+    <div class="left-body" id="left-body"></div>
+  </div>
+  <div class="resize-handle" id="resize-handle"></div>
+  <div class="right-panel">
+    <div class="gantt-header" id="gantt-header"></div>
+    <div class="gantt-body" id="gantt-body">
+      <div class="gantt-scroll-inner" id="gantt-inner"></div>
+    </div>
+  </div>
+</div>
+
+<div class="statusbar">
+  <span id="status-text">Listo</span>
+  <span id="range-text"></span>
+  <span style="margin-left:auto" id="hover-info"></span>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="loading-overlay" id="loading-overlay" aria-live="polite" aria-busy="true">
+  <div class="loading-card">
+    <div class="loading-spinner"></div>
+    <h2>Cargando actualización de datos...</h2>
+    <p>Obteniendo la versión más reciente de la planilla</p>
+  </div>
+</div>
+
+<script>
+const EMBEDDED_DATA = [{"etapa":"Gestion","actividad":"Documentacion","tarea":"Plan de Proyecto: 2026-09-22 20:32","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"12/9/2026","fechaVenc":"14/9/2026","fechaEntrega":"14/9/2026","avance":"100","observaciones":"Se valido. Se solicita desglosar las tareas en tareas mas pequenias","origen":"PLANIFICACION DE LA GESTION DEL TIEMPO ( Calendarizacion ) Cronograma del Proyecto"},{"etapa":"Gestion","actividad":"Documentacion","tarea":"Generar Gantt ( Linea de Tiempo )","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"12/9/2026","fechaVenc":"14/9/2026","fechaEntrega":"14/9/2026","avance":"100","observaciones":"Se valido. Se solicita desglosar las tareas en tareas mas pequenias","origen":"PLANIFICACION DE LA GESTION DEL TIEMPO ( Calendarizacion ) Cronograma del Proyecto"},{"etapa":"Gestion","actividad":"Organizacion","tarea":"Reorganizacion de Estructura de Carpetas","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"12/9/2026","fechaVenc":"12/9/2026","fechaEntrega":"12/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Gestion","actividad":"Organizacion","tarea":"Reestructuracion de la Planilla de Tareas","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"12/9/2026","fechaVenc":"13/9/2026","fechaEntrega":"13/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Gestion","actividad":"Organizacion","tarea":"Agregar Detalle al Plan de Proyecto","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"17/9/2026","fechaVenc":"17/9/2026","fechaEntrega":"17/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Gestion","actividad":"Organizacion","tarea":"Redaccion Instrucciones Seguimiento","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"17/9/2026","fechaVenc":"17/9/2026","fechaEntrega":"17/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Formular Preguntas a Inspectores","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"5/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"5/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Formular Preguntas a Docentes","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"5/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Formular Preguntas a Director","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"5/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Formular Preguntas a Docentes","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"5/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Formular Preguntas a Tecnicos","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"5/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Responder Cuestionaro a Inspectores","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"5/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Responder Cuestionario a Docentes","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"5/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Responder Cuestionario a Cliente","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"4/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Responder Cuestionario a Tecnicos","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"4/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Responder Cuestionario a Directores","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"9/9/2026","fechaVenc":"10/9/2026","fechaEntrega":"10/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Responder Cuestionario a Directores","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"9/9/2026","fechaVenc":"10/9/2026","fechaEntrega":"10/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Sintesis Entrevistas","estado":"Reasignada","situacion":"Reasignado","asignado":"Luciano","fechaAsig":"9/9/2026","fechaVenc":"11/9/2026","fechaEntrega":"11/9/2026","avance":"70","observaciones":"ACA LIO POR HACER TAREA DE A 2","origen":"Sintesis comunicacion con los interesados"},{"etapa":"Analisis","actividad":"Elicitacion de Requerimientos","tarea":"Sintesis Entrevistas","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"9/9/2026","fechaVenc":"11/9/2026","fechaEntrega":"11/9/2026","avance":"100","observaciones":"ACA LIO POR HACER TAREA DE A 2","origen":"Sintesis comunicacion con los interesados"},{"etapa":"Analisis","actividad":"Estudio de Viabilidad","tarea":"Analisis de Plataformas Existentes","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"9/9/2026","fechaVenc":"11/9/2026","fechaEntrega":"11/9/2026","avance":"100","observaciones":"","origen":"Analisis sobre otras plataformas educativas"},{"etapa":"Analisis","actividad":"Estudio de Viabilidad","tarea":"Revision Analisis de Plataformas Exis.","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"11/9/2026","fechaVenc":"11/9/2026","fechaEntrega":"11/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Estudio de Viabilidad","tarea":"Revision Analisis de Plataformas Exis.","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"11/9/2026","fechaVenc":"11/9/2026","fechaEntrega":"11/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Estudio de Viabilidad","tarea":"Crear Estudio de Viabilidad","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"6/9/2026","fechaVenc":"7/9/2026","fechaEntrega":"7/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Definicion de Roles","tarea":"Crear Definicion de Roles","estado":"Finalizada","situacion":"Validado","asignado":"Luciano","fechaAsig":"6/9/2026","fechaVenc":"6/9/2026","fechaEntrega":"6/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Matriz FODA","tarea":"Matriz FODA","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"6/9/2026","fechaVenc":"7/9/2026","fechaEntrega":"7/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Riesgos y Contingencias","tarea":"ID: TR01 : Plan de Riesgos y Contingencias","estado":"Finalizada","situacion":"Reasignado","asignado":"Ignacio","fechaAsig":"9/9/2026","fechaVenc":"10/9/2026","fechaEntrega":"10/9/2026","avance":"70","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Riesgos y Contingencias","tarea":"ID: TR01 : Modificacion Plan Riesgos y Contingencias","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"18/9/2026","fechaVenc":"19/9/2026","fechaEntrega":"18/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Gestion","actividad":"Gestion","tarea":"Eleccion del Ciclo de Vida","estado":"Finalizada","situacion":"Validado","asignado":"Lucia","fechaAsig":"9/9/2026","fechaVenc":"9/9/2026","fechaEntrega":"9/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Gestion","actividad":"Gestion","tarea":"Eleccion del Ciclo de Vida","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"9/9/2026","fechaVenc":"9/9/2026","fechaEntrega":"9/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Redaccion de Funcionalidades del Sistema","estado":"Finalizada","situacion":"Validado","asignado":"Ignacio","fechaAsig":"11/9/2026","fechaVenc":"18/9/2026","fechaEntrega":"17/9/2026","avance":"20","observaciones":"Revisado por lucia, tarea incompleta continua en revision","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Redaccion de Funcionalidades del Sistema","estado":"En Proceso","situacion":"Esperando Revision","asignado":"Luciano","fechaAsig":"11/9/2026","fechaVenc":"18/9/2026","fechaEntrega":"18/9/2026","avance":"20","observaciones":"Revisado por lucia, tarea incompleta continua en revision","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Conciliar Diferencias entre los interesados","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"17/9/2026","fechaVenc":"17/9/2026","fechaEntrega":"19/9/2026","avance":"100","observaciones":"1. A resolver: Diferencias entre Adscriptos y DOE: En cuestionario de Directores se solicita dar acceso amplio a Adscriptos y equipos interdisciplinarios, otro dice  que esto genera redundancia con el Portafolio Docente ya existente de ANEP y puede percibirse como sobre-auditoría. \n2. Evaluación competencial opcional: Asegurarse de que en los Requerimientos Funcionales la vinculación de tareas a competencias sea opcional y no obligatoria, permitiendo también actividades tradicionales, foros y listas de cotejo.","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"ID: TR02 : Completar Sintesis Entrevistas","estado":"Finalizada","situacion":"Reasignado","asignado":"Lucia","fechaAsig":"18/9/2026","fechaVenc":"20/9/2026","fechaEntrega":"20/9/2026","avance":"90","observaciones":"1. A resolver: Diferencias entre Adscriptos y DOE: En cuestionario de Directores se solicita dar acceso amplio a Adscriptos y equipos interdisciplinarios, otro dice  que esto genera redundancia con el Portafolio Docente ya existente de ANEP y puede percibirse como sobre-auditoría. \n2. Evaluación competencial opcional: Asegurarse de que en los Requerimientos Funcionales la vinculación de tareas a competencias sea opcional y no obligatoria, permitiendo también actividades tradicionales, foros y listas de cotejo.","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Conciliar Sintesis con Cuestionarios","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"20/9/2026","fechaVenc":"20/9/2026","fechaEntrega":"19/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"ID: TR02 : Completar Sintesis Entrevistas","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"21/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"21/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RF Perfil Cliente","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"18/9/2026","fechaVenc":"20/9/2026","fechaEntrega":"20/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RF Perfil Director","estado":"Finalizada","situacion":"Esperando Revision","asignado":"Ignacio","fechaAsig":"18/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"21/9/2026","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RF Perfil Inspector","estado":"Finalizada","situacion":"Esperando Revision","asignado":"Luciano","fechaAsig":"18/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"21/9/2026","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RF Perfil Docente","estado":"Finalizada","situacion":"Entrega Incompleta","asignado":"Ignacio","fechaAsig":"18/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"21/9/2026","avance":"60","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RF Perfil Estudiante","estado":"Finalizada","situacion":"Esperando Revision","asignado":"Luciano","fechaAsig":"18/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"21/9/2026","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RF Perfil Tecnicos","estado":"Asignada","situacion":"Pendiente","asignado":"Ignacio","fechaAsig":"22/9/2026","fechaVenc":"23/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Gestion","actividad":"Organizacion","tarea":"Automatizacion de Reportes al Cliente","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"20/9/2026","fechaVenc":"23/9/2026","fechaEntrega":"22/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Gestion","actividad":"Organizacion","tarea":"Crear plantilla de formatos de ESRE","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"20/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"20/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Crear Documento Descripcion del Sistema","estado":"Finalizada","situacion":"En Revision","asignado":"Lucia","fechaAsig":"19/9/2026","fechaVenc":"22/9/2026","fechaEntrega":"22/9/2026","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Revisar Doc Descripcion del Sistema","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"20/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"21/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Redactar Sintesis a los Interesados Documento Definitivo","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"21/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"21/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Completar Redaccion de Funcionalidades del Sistema","estado":"En Proceso","situacion":"Pendiente","asignado":"Luciano","fechaAsig":"21/9/2026","fechaVenc":"22/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Formatear Documento de RF al formato estandar acordado","estado":"Desistida","situacion":"Entrega Incompleta","asignado":"Ignacio","fechaAsig":"22/9/2026","fechaVenc":"22/9/2026","fechaEntrega":"","avance":"1","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Formatear Documento de RF al formato estandar acordado","estado":"Asignada","situacion":"Pendiente","asignado":"Luciano","fechaAsig":"21/9/2026","fechaVenc":"22/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RNOF Perfil Cliente","estado":"Finalizada","situacion":"Validado","asignado":"Gabriel","fechaAsig":"19/9/2026","fechaVenc":"21/9/2026","fechaEntrega":"20/9/2026","avance":"100","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Revision - RF Perfil Director","estado":"Asignada","situacion":"Pendiente","asignado":"Lucia","fechaAsig":"22/9/2026","fechaVenc":"23/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Revision - RF Perfil Docente","estado":"","situacion":"","asignado":"_","fechaAsig":"22/9/2026","fechaVenc":"22/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RNOF Perfil Director","estado":"Asignada","situacion":"_","asignado":"Ignacio","fechaAsig":"21/9/2026","fechaVenc":"22/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RNOF Perfil Inspector","estado":"","situacion":"","asignado":"Luciano","fechaAsig":"21/9/2026","fechaVenc":"24/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Modelado de Casos de Uso","tarea":"RNOF Perfil Docente","estado":"","situacion":"","asignado":"Ignacio","fechaAsig":"21/9/2026","fechaVenc":"22/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RNOF Perfil Estudiante","estado":"","situacion":"","asignado":"Luciano","fechaAsig":"22/9/2026","fechaVenc":"23/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"RNOF Perfil Tecnicos","estado":"","situacion":"","asignado":"Ignacio","fechaAsig":"22/9/2026","fechaVenc":"23/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Revision de RF","estado":"","situacion":"","asignado":"Lucia","fechaAsig":"24/9/2026","fechaVenc":"25/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis Requerimientos","tarea":"Revision de RNF","estado":"","situacion":"","asignado":"Gabriel","fechaAsig":"24/9/2026","fechaVenc":"25/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Especificacion de Requerimientos","tarea":"Consolidacion Documento RF","estado":"","situacion":"_","asignado":"Lucia","fechaAsig":"25/9/2026","fechaVenc":"25/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Especificacion de Requerimientos","tarea":"Consolidacion Documento RNF","estado":"","situacion":"_","asignado":"Lucia","fechaAsig":"25/9/2026","fechaVenc":"26/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis de Puntos de Funcion","tarea":"Funciones de Datos","estado":"","situacion":"","asignado":"Gabriel","fechaAsig":"26/9/2026","fechaVenc":"27/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis de Puntos de Funcion","tarea":"Funciones de Transacciones","estado":"","situacion":"_","asignado":"Gabriel","fechaAsig":"26/9/2026","fechaVenc":"27/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Analisis de Puntos de Funcion","tarea":"Factores de Ajuste","estado":"","situacion":"","asignado":"Gabriel","fechaAsig":"26/9/2026","fechaVenc":"27/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Modelado de Casos de Uso","tarea":"CU Perfil Cliente","estado":"","situacion":"","asignado":"Gabriel","fechaAsig":"26/9/2026","fechaVenc":"29/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Modelado de Casos de Uso","tarea":"CU Perfil Director","estado":"","situacion":"","asignado":"Ignacio","fechaAsig":"24/9/2026","fechaVenc":"26/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Modelado de Casos de Uso","tarea":"CU Perfil Inspector","estado":"","situacion":"","asignado":"Luciano","fechaAsig":"26/9/2026","fechaVenc":"29/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Modelado de Casos de Uso","tarea":"CU Perfil Docente","estado":"","situacion":"","asignado":"Ignacio","fechaAsig":"24/9/2026","fechaVenc":"26/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Modelado de Casos de Uso","tarea":"CU Perfil Estudiante","estado":"","situacion":"","asignado":"Luciano","fechaAsig":"26/9/2026","fechaVenc":"29/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Analisis","actividad":"Modelado de Casos de Uso","tarea":"CU Perfil Tecnicos","estado":"","situacion":"","asignado":"Gabriel","fechaAsig":"26/9/2026","fechaVenc":"29/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Disenio","actividad":"Eleccion de la Arquitectura","tarea":"Definicion de Arquitectura","estado":"","situacion":"","asignado":"Lucia","fechaAsig":"24/9/2026","fechaVenc":"24/9/2026","fechaEntrega":"","avance":"","observaciones":"Hay que explicar la elección al definirla, habíamos dicho sashimi","origen":""},{"etapa":"Disenio","actividad":"Eleccion de la Arquitectura","tarea":"Definicion de Arquitectura","estado":"","situacion":"","asignado":"Gabriel","fechaAsig":"24/9/2026","fechaVenc":"24/9/2026","fechaEntrega":"","avance":"","observaciones":"Hay que explicar la elección al definirla, habíamos dicho sashimi","origen":""},{"etapa":"Disenio","actividad":"Eleccion de la Integracion","tarea":"Integracion BigBlueButtom","estado":"","situacion":"","asignado":"Lucia","fechaAsig":"24/9/2026","fechaVenc":"24/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Disenio","actividad":"Prototipado Figma","tarea":"Prototipado Figma","estado":"","situacion":"","asignado":"_","fechaAsig":"21/9/2026","fechaVenc":"28/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Disenio","actividad":"Diagrama de Componentes","tarea":"Diagrama de Componentes","estado":"","situacion":"","asignado":"_","fechaAsig":"22/9/2026","fechaVenc":"30/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Disenio","actividad":"Diagrama de Despliegue","tarea":"Diagrama de Despliegue","estado":"","situacion":"","asignado":"_","fechaAsig":"22/9/2026","fechaVenc":"28/9/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Disenio","actividad":"Unificacion de Documentacion","tarea":"Elaboracion de Documento Final","estado":"","situacion":"","asignado":"_","fechaAsig":"1/10/2026","fechaVenc":"8/10/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Disenio","actividad":"Revision Final","tarea":"Validacion del Equipo del Doc. Final","estado":"","situacion":"","asignado":"_","fechaAsig":"8/10/2026","fechaVenc":"8/10/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""},{"etapa":"Gestion","actividad":"Entrega Final","tarea":"Entrega del Proyecto","estado":"","situacion":"","asignado":"_","fechaAsig":"10/10/2026","fechaVenc":"10/10/2026","fechaEntrega":"","avance":"","observaciones":"","origen":""}];
+
+const SHEET_ID = '1UZZfk9muu5nYuJCYpoRueC0RLyxuYm2thrkOFnfemrY';
+const ASSIGNEE_COLORS = {
+  'Gabriel': 'G', 'Lucia': 'L', 'Luciano': 'U', 'Ignacio': 'I'
+};
+const COLOR_MAP = { G:'#3b82f6', L:'#10b981', U:'#f59e0b', I:'#8b5cf6', X:'#94a3b8' };
+
+let rawRows = [];
+let viewRows = [];       // flattened visible rows for rendering
+let expanded = new Set();
+let dayWidth = 28;
+let filterAsignado = '';
+let filterEstado = '';
+let showEstimadas = true;
+let searchTerm = '';
+let minDate = null, maxDate = null, today = new Date();
+let days = [];           // array of Date objects for columns
+
+// ---------- INIT ----------
+function init() {
+  rawRows = EMBEDDED_DATA.map((r,i) => ({...r, _id:i}));
+  document.getElementById('version-badge').textContent =
+    'VERSION: ' + new Date().toLocaleString('es-UY', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('count-num').textContent = rawRows.length;
+  populateFilters();
+  buildLegend();
+  // Expand all etapas by default
+  const etapas = [...new Set(rawRows.map(r => r.etapa))];
+  etapas.forEach(e => expanded.add('e:'+e));
+  // Expand actividades too
+  rawRows.forEach(r => expanded.add('a:'+r.etapa+'|'+r.actividad));
+  computeRange();
+  render();
+  setupEvents();
+  document.getElementById('status-text').textContent =
+    'Datos cargados · ' + rawRows.length + ' tareas';
+}
+
+function populateFilters() {
+  const asigs = [...new Set(rawRows.map(r => r.asignado).filter(a => a && a !== '_'))].sort();
+  const estados = [...new Set(rawRows.map(r => r.estado).filter(Boolean))].sort();
+  const selA = document.getElementById('filter-asignado');
+  const selE = document.getElementById('filter-estado');
+  asigs.forEach(a => {
+    const o = document.createElement('option'); o.value = a; o.textContent = a; selA.appendChild(o);
+  });
+  estados.forEach(e => {
+    const o = document.createElement('option'); o.value = e; o.textContent = e; selE.appendChild(o);
+  });
+}
+
+function buildLegend() {
+  const el = document.getElementById('legend');
+  const seen = {};
+  rawRows.forEach(r => {
+    if (r.asignado && r.asignado !== '_') seen[r.asignado] = ASSIGNEE_COLORS[r.asignado] || 'X';
+  });
+  el.innerHTML = Object.entries(seen).map(([name, code]) =>
+    `<span class="legend-item"><span class="legend-dot" style="background:${COLOR_MAP[code]}"></span>${name}</span>`
+  ).join('');
+}
+
+function parseDate(s) {
+  if (!s) return null;
+  const m = String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return null;
+  return new Date(+m[3], +m[2]-1, +m[1]);
+}
+
+function computeRange() {
+  let min = null, max = null;
+  rawRows.forEach(r => {
+    [r.fechaAsig, r.fechaVenc, r.fechaEntrega].forEach(s => {
+      const d = parseDate(s);
+      if (!d) return;
+      if (!min || d < min) min = d;
+      if (!max || d > max) max = d;
+    });
+  });
+  if (!min) min = new Date(2026, 8, 1);
+  if (!max) max = new Date(2026, 9, 15);
+  // pad
+  min = new Date(min); min.setDate(min.getDate() - 2);
+  max = new Date(max); max.setDate(max.getDate() + 5);
+  minDate = min; maxDate = max;
+
+  days = [];
+  const cur = new Date(min);
+  while (cur <= max) {
+    days.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  document.getElementById('range-text').textContent =
+    min.toLocaleDateString('es-UY') + ' → ' + max.toLocaleDateString('es-UY') +
+    ' · ' + days.length + ' días';
+}
+
+function dayIndex(d) {
+  if (!d) return -1;
+  const t0 = Date.UTC(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+  const t1 = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.round((t1 - t0) / 86400000);
+}
+
+// ---------- BUILD VIEW TREE ----------
+function getFilteredRows() {
+  return rawRows.filter(r => {
+    if (filterAsignado && r.asignado !== filterAsignado) return false;
+    if (filterEstado && r.estado !== filterEstado) return false;
+    if (searchTerm) {
+      const t = searchTerm.toLowerCase();
+      const hay = [r.etapa, r.actividad, r.tarea, r.asignado, r.estado, r.observaciones]
+        .join(' ').toLowerCase();
+      if (!hay.includes(t)) return false;
+    }
+    return true;
+  });
+}
+
+function buildView() {
+  const filtered = getFilteredRows();
+  // Group: etapa -> actividad -> tasks
+  const tree = {};
+  filtered.forEach(r => {
+    if (!tree[r.etapa]) tree[r.etapa] = {};
+    if (!tree[r.etapa][r.actividad]) tree[r.etapa][r.actividad] = [];
+    tree[r.etapa][r.actividad].push(r);
+  });
+
+  viewRows = [];
+  Object.keys(tree).sort((a,b)=>a.localeCompare(b,'es')).forEach(etapa => {
+    const acts = tree[etapa];
+    const allTasks = Object.values(acts).flat();
+    viewRows.push({
+      type: 'etapa', key: 'e:'+etapa, name: etapa, level: 0,
+      count: allTasks.length, tasks: allTasks
+    });
+    if (!expanded.has('e:'+etapa)) return;
+    Object.keys(acts).sort((a,b)=>a.localeCompare(b,'es')).forEach(act => {
+      const tasks = acts[act];
+      viewRows.push({
+        type: 'actividad', key: 'a:'+etapa+'|'+act, name: act, level: 1,
+        count: tasks.length, tasks, parent: etapa
+      });
+      if (!expanded.has('a:'+etapa+'|'+act)) return;
+      tasks.forEach(t => {
+        viewRows.push({
+          type: 'tarea', key: 't:'+t._id, name: t.tarea, level: 2,
+          task: t, count: 1
+        });
+      });
+    });
+  });
+}
+
+// ---------- RENDER ----------
+function render() {
+  buildView();
+  document.getElementById('count-num').textContent = getFilteredRows().length;
+  renderLeft();
+  renderHeader();
+  renderGantt();
+  syncScroll();
+}
+
+function estadoClass(e) {
+  const s = (e||'').toLowerCase();
+  if (s.includes('finalizada')) return 'est-finalizada';
+  if (s.includes('proceso')) return 'est-enproceso';
+  if (s.includes('asignada') && !s.includes('re')) return 'est-asignada';
+  if (s.includes('reasignada')) return 'est-reasignada';
+  if (s.includes('desistida')) return 'est-desistida';
+  if (s.includes('comenzar') || s.includes('sin')) return 'est-sincomenzar';
+  return 'est-default';
+}
+
+function renderLeft() {
+  const body = document.getElementById('left-body');
+  let html = '';
+  viewRows.forEach(row => {
+    const isGroup = row.type !== 'tarea';
+    const isOpen = expanded.has(row.key);
+    const hasKids = isGroup;
+    html += `<div class="task-row ${isGroup?'group':''}" data-key="${esc(row.key)}" style="height:var(--row-h)">
+      <div class="task-cell indent-${row.level}">
+        ${hasKids ? `<span class="toggle ${isOpen?'open':''}" data-toggle="${esc(row.key)}">▶</span>` : '<span style="width:16px;flex-shrink:0"></span>'}
+        <span class="task-name" title="${esc(row.name)}">${esc(row.name)}</span>
+        ${row.type === 'tarea' && row.task.estado
+          ? `<span class="badge-estado ${estadoClass(row.task.estado)}">${esc(row.task.estado)}</span>`
+          : (isGroup ? `<span style="font-size:11px;color:#94a3b8">${row.count}</span>` : '')}
+      </div>
+    </div>`;
+  });
+  body.innerHTML = html || '<div class="empty">Sin resultados</div>';
+
+  body.querySelectorAll('[data-toggle]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const k = el.dataset.toggle;
+      if (expanded.has(k)) expanded.delete(k); else expanded.add(k);
+      render();
+    });
+  });
+}
+
+function renderHeader() {
+  // months
+  const months = [];
+  let curM = -1, curY = -1, start = 0;
+  days.forEach((d, i) => {
+    if (d.getMonth() !== curM || d.getFullYear() !== curY) {
+      if (curM >= 0) months.push({ label: monthLabel(curM, curY), start, end: i });
+      curM = d.getMonth(); curY = d.getFullYear(); start = i;
+    }
+  });
+  if (curM >= 0) months.push({ label: monthLabel(curM, curY), start, end: days.length });
+
+  const totalW = days.length * dayWidth;
+  let mHtml = '<div class="tl-months" style="width:'+totalW+'px">';
+  months.forEach(m => {
+    const w = (m.end - m.start) * dayWidth;
+    mHtml += `<div class="tl-month" style="width:${w}px;min-width:${w}px">${m.label}</div>`;
+  });
+  mHtml += '</div>';
+
+  let dHtml = '<div class="tl-days" style="width:'+totalW+'px">';
+  const todayIdx = dayIndex(today);
+  days.forEach((d, i) => {
+    const wd = d.getDay();
+    const isWe = wd === 0 || wd === 6;
+    const isToday = i === todayIdx;
+    dHtml += `<div class="tl-day ${isWe?'weekend':''} ${isToday?'today-col':''}" style="width:${dayWidth}px;min-width:${dayWidth}px">
+      <span>${d.getDate()}</span>
+    </div>`;
+  });
+  dHtml += '</div>';
+
+  document.getElementById('gantt-header').innerHTML =
+    `<div style="width:${totalW}px;position:relative">${mHtml}${dHtml}
+      ${todayIdx >= 0 ? `<div class="today-line" style="left:${todayIdx * dayWidth + dayWidth/2}px"><span class="today-label">HOY</span></div>` : ''}
+    </div>`;
+}
+
+function monthLabel(m, y) {
+  const names = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return names[m] + ' ' + y;
+}
+
+function renderGantt() {
+  const inner = document.getElementById('gantt-inner');
+  const totalW = days.length * dayWidth;
+  const todayIdx = dayIndex(today);
+
+  // grid
+  let grid = '';
+  days.forEach((d, i) => {
+    const wd = d.getDay();
+    grid += `<div class="grid-line ${(wd===0||wd===6)?'weekend':''}" style="left:${i*dayWidth}px;width:${dayWidth}px;background:${(wd===0||wd===6)?'#f8fafc':'transparent'}"></div>`;
+  });
+
+  let rowsHtml = '';
+  viewRows.forEach(row => {
+    const isGroup = row.type !== 'tarea';
+    rowsHtml += `<div class="gantt-row ${isGroup?'group':''}" style="width:${totalW}px;height:var(--row-h)">`;
+
+    if (row.type === 'tarea') {
+      const t = row.task;
+      const bars = barsForTask(t);
+      bars.forEach(b => {
+        rowsHtml += barHtml(b, false);
+      });
+    } else {
+      // group summary bar: span from earliest start to latest end of children
+      const span = spanForTasks(row.tasks);
+      if (span) {
+        rowsHtml += barHtml({
+          left: span.start * dayWidth,
+          width: Math.max((span.end - span.start + 1) * dayWidth - 2, 4),
+          code: 'X', label: '', isGroup: true, task: null
+        }, true);
+      }
+    }
+    rowsHtml += '</div>';
+  });
+
+  inner.innerHTML = `<div style="width:${totalW}px;position:relative;min-height:100%">
+    ${grid}
+    ${todayIdx >= 0 ? `<div class="today-line" style="left:${todayIdx * dayWidth + dayWidth/2}px"></div>` : ''}
+    ${rowsHtml}
+  </div>`;
+
+  // tooltips
+  inner.querySelectorAll('.bar[data-tip]').forEach(el => {
+    el.addEventListener('mouseenter', e => showTip(e, el.dataset.tip));
+    el.addEventListener('mousemove', e => moveTip(e));
+    el.addEventListener('mouseleave', hideTip);
+  });
+}
+
+function barsForTask(t) {
+  const start = parseDate(t.fechaAsig);
+  let end = parseDate(t.fechaVenc) || parseDate(t.fechaEntrega) || start;
+  if (!start) return [];
+  if (end && end < start) end = start;
+
+  const si = dayIndex(start);
+  const ei = dayIndex(end || start);
+  if (si < 0) return [];
+
+  const code = ASSIGNEE_COLORS[t.asignado] || 'X';
+  const label = code;
+  const isEst = !t.estado || t.estado === '' || (t.estado.toLowerCase().includes('sin comenzar'));
+  // if not showing estimadas and no real status, skip? user can toggle
+  if (!showEstimadas && isEst && !t.fechaEntrega) {
+    // still show if has dates
+  }
+
+  const left = si * dayWidth + 1;
+  const width = Math.max((ei - si + 1) * dayWidth - 2, 6);
+
+  const tip = [
+    `<strong>${esc(t.tarea)}</strong>`,
+    `Etapa: ${esc(t.etapa)}`,
+    `Actividad: ${esc(t.actividad)}`,
+    `Asignado: ${esc(t.asignado || '—')}`,
+    `Estado: ${esc(t.estado || '—')}`,
+    `Situación: ${esc(t.situacion || '—')}`,
+    `Asignada: ${esc(t.fechaAsig || '—')}`,
+    `Vence: ${esc(t.fechaVenc || '—')}`,
+    `Entrega: ${esc(t.fechaEntrega || '—')}`,
+    t.avance ? `% Avance: ${esc(t.avance)}` : '',
+    t.observaciones ? `Obs: ${esc(t.observaciones).slice(0,120)}` : ''
+  ].filter(Boolean).join('<br>');
+
+  return [{
+    left, width, code, label,
+    isGroup: false,
+    estimada: isEst && !t.fechaEntrega,
+    tip, task: t
+  }];
+}
+
+function spanForTasks(tasks) {
+  let s = null, e = null;
+  tasks.forEach(t => {
+    const a = parseDate(t.fechaAsig);
+    const b = parseDate(t.fechaVenc) || parseDate(t.fechaEntrega) || a;
+    if (!a) return;
+    const si = dayIndex(a), ei = dayIndex(b || a);
+    if (si < 0) return;
+    if (s === null || si < s) s = si;
+    if (e === null || ei > e) e = ei;
+  });
+  if (s === null) return null;
+  return { start: s, end: e };
+}
+
+function barHtml(b, isGroup) {
+  const cls = `bar ${b.code} ${isGroup || b.isGroup ? 'group-bar' : ''} ${b.estimada ? 'estimada' : ''}`;
+  const tipAttr = b.tip ? `data-tip="${b.tip.replace(/"/g, '&quot;')}"` : '';
+  return `<div class="${cls}" style="left:${b.left}px;width:${b.width}px" ${tipAttr}>${b.label || ''}</div>`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+// ---------- TOOLTIP ----------
+const tipEl = document.getElementById('tooltip');
+function showTip(e, html) {
+  tipEl.innerHTML = html;
+  tipEl.style.display = 'block';
+  moveTip(e);
+}
+function moveTip(e) {
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + 300 > window.innerWidth) x = e.clientX - 280;
+  if (y + 200 > window.innerHeight) y = e.clientY - 160;
+  tipEl.style.left = x + 'px';
+  tipEl.style.top = y + 'px';
+}
+function hideTip() { tipEl.style.display = 'none'; }
+
+// ---------- SCROLL SYNC ----------
+function syncScroll() {
+  const leftBody = document.getElementById('left-body');
+  const ganttBody = document.getElementById('gantt-body');
+  const ganttHeader = document.getElementById('gantt-header');
+
+  let lock = false;
+  leftBody.onscroll = () => {
+    if (lock) return; lock = true;
+    ganttBody.scrollTop = leftBody.scrollTop;
+    lock = false;
+  };
+  ganttBody.onscroll = () => {
+    if (lock) return; lock = true;
+    leftBody.scrollTop = ganttBody.scrollTop;
+    ganttHeader.scrollLeft = ganttBody.scrollLeft;
+    lock = false;
+  };
+}
+
+// ---------- EVENTS ----------
+function setupEvents() {
+  document.getElementById('btn-expand').onclick = () => {
+    getFilteredRows().forEach(r => {
+      expanded.add('e:'+r.etapa);
+      expanded.add('a:'+r.etapa+'|'+r.actividad);
+    });
+    render();
+  };
+  document.getElementById('btn-collapse').onclick = () => {
+    expanded.clear();
+    // keep etapas expanded lightly? user asked collapse all
+    render();
+  };
+  document.getElementById('filter-asignado').onchange = e => {
+    filterAsignado = e.target.value; render();
+  };
+  document.getElementById('filter-estado').onchange = e => {
+    filterEstado = e.target.value; render();
+  };
+  document.getElementById('chk-estimadas').onchange = e => {
+    showEstimadas = e.target.checked; render();
+  };
+  document.getElementById('zoom-in').onclick = () => {
+    dayWidth = Math.min(48, dayWidth + 4);
+    document.documentElement.style.setProperty('--day-w', dayWidth + 'px');
+    render();
+  };
+  document.getElementById('zoom-out').onclick = () => {
+    dayWidth = Math.max(14, dayWidth - 4);
+    document.documentElement.style.setProperty('--day-w', dayWidth + 'px');
+    render();
+  };
+  let st;
+  document.getElementById('search').oninput = e => {
+    clearTimeout(st);
+    st = setTimeout(() => { searchTerm = e.target.value.trim(); render(); }, 200);
+  };
+
+  document.getElementById('btn-refresh').onclick = () => tryLiveUpdate();
+  document.getElementById('btn-load-file').onclick = () => document.getElementById('file-input').click();
+  document.getElementById('file-input').onchange = handleLocalFile;
+
+  // resize left panel
+  const handle = document.getElementById('resize-handle');
+  const left = document.getElementById('left-panel');
+  let dragging = false;
+  handle.addEventListener('mousedown', e => {
+    dragging = true; handle.classList.add('dragging');
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const w = Math.max(260, Math.min(e.clientX, window.innerWidth * 0.6));
+    left.style.width = w + 'px';
+    document.documentElement.style.setProperty('--left-w', w + 'px');
+    handle.style.left = w + 'px';
+  });
+  window.addEventListener('mouseup', () => {
+    dragging = false; handle.classList.remove('dragging');
+  });
+}
+
+function showLoadingOverlay() {
+  const el = document.getElementById('loading-overlay');
+  el.classList.add('visible');
+  document.getElementById('status-text').textContent = 'Cargando actualización de datos...';
+}
+
+function hideLoadingOverlay() {
+  document.getElementById('loading-overlay').classList.remove('visible');
+}
+
+function tryLiveUpdate() {
+  // Mostrar cartel de carga de forma clara
+  showLoadingOverlay();
+  const startedAt = Date.now();
+  const MIN_VISIBLE_MS = 4000; // mínimo 4 segundos en pantalla
+
+  function finishLoading(statusMsg) {
+    const elapsed = Date.now() - startedAt;
+    const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
+    setTimeout(() => {
+      hideLoadingOverlay();
+      if (statusMsg) document.getElementById('status-text').textContent = statusMsg;
+    }, remaining);
+  }
+
+  window._gvizDone = false;
+  window.handleGoogleData = function(response) {
+    if (window._gvizDone) return;
+    window._gvizDone = true;
+    try {
+      if (!response || response.status !== 'ok') throw new Error('error');
+      const cols = response.table.cols.map(c => (c.label || c.id || '').trim());
+      const mapped = (response.table.rows || []).map(r => {
+        const obj = {};
+        cols.forEach((col, i) => {
+          if (!col) return;
+          const cell = r.c && r.c[i];
+          const val = cell ? (cell.f != null ? cell.f : (cell.v != null ? cell.v : '')) : '';
+          obj[col] = String(val).trim();
+        });
+        return obj;
+      }).filter(r => {
+        const e = (r['Etapa']||'').trim(), t = (r['Tarea']||'').trim();
+        return e && e !== '_' && t;
+      }).map((r,i) => ({
+        etapa: r['Etapa']||'', actividad: r['Actividad']||'', tarea: r['Tarea']||'',
+        estado: r['Estado']||'', situacion: r['Situacion']||'', asignado: r['Asignado']||'',
+        fechaAsig: r['Fecha Asignada']||'',
+        fechaVenc: r['Fecha   Vencim']||r['Fecha Vencim']||'',
+        fechaEntrega: r['Fecha Entrega']||'',
+        avance: r['% Avance']||'', observaciones: r['Observaciones']||'', origen: r['Origen']||'',
+        _id: i
+      }));
+      if (mapped.length >= 15) {
+        rawRows = mapped;
+        document.getElementById('count-num').textContent = rawRows.length;
+        document.getElementById('version-badge').textContent =
+          'VERSION: ' + new Date().toLocaleString('es-UY', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        populateFilters();
+        buildLegend();
+        computeRange();
+        render();
+        finishLoading('Actualizado en vivo · ' + rawRows.length + ' tareas');
+      } else {
+        finishLoading(
+          'En vivo solo ' + mapped.length + ' filas (¿filtro en la planilla?). Se mantienen datos locales.'
+        );
+      }
+    } catch (err) {
+      finishLoading('No se pudo actualizar en vivo');
+    }
+  };
+  const s = document.createElement('script');
+  s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:handleGoogleData&_=${Date.now()}`;
+  s.onerror = () => {
+    finishLoading('Error de conexión al actualizar');
+  };
+  document.body.appendChild(s);
+
+  // Timeout de seguridad (15s)
+  setTimeout(() => {
+    if (!window._gvizDone) {
+      window._gvizDone = true;
+      finishLoading('Tiempo de espera agotado. Se mantienen los datos actuales.');
+    }
+  }, 15000);
+}
+
+function handleLocalFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const text = ev.target.result;
+      // simple CSV parse
+      const lines = parseCSV(text);
+      if (lines.length < 2) throw new Error('Archivo vacío');
+      const headers = lines[0].map(h => h.trim());
+      const find = (...names) => {
+        for (const n of names) {
+          const i = headers.findIndex(h => h.toLowerCase().includes(n.toLowerCase()));
+          if (i >= 0) return i;
+        }
+        return -1;
+      };
+      const iEtapa=find('Etapa'), iAct=find('Actividad'), iTarea=find('Tarea');
+      const iEstado=find('Estado'), iSit=find('Situacion'), iAsig=find('Asignado');
+      const iFAsig=find('Fecha Asignada'), iFVenc=find('Vencim'), iFEnt=find('Fecha Entrega');
+      const iAvance=find('% Avance','Avance'), iObs=find('Observaciones'), iOri=find('Origen');
+      const mapped = [];
+      for (let r=1; r<lines.length; r++) {
+        const c = lines[r];
+        const etapa = (c[iEtapa]||'').trim();
+        const tarea = (c[iTarea]||'').trim();
+        if (!etapa || etapa==='_' || !tarea) continue;
+        mapped.push({
+          etapa, actividad:(c[iAct]||'').trim(), tarea,
+          estado:(c[iEstado]||'').trim(), situacion:(c[iSit]||'').trim(),
+          asignado:(c[iAsig]||'').trim(),
+          fechaAsig:(c[iFAsig]||'').trim(),
+          fechaVenc:(iFVenc>=0?(c[iFVenc]||''):'').trim(),
+          fechaEntrega:(c[iFEnt]||'').trim(),
+          avance:(c[iAvance]||'').trim(),
+          observaciones:(c[iObs]||'').trim(),
+          origen:(c[iOri]||'').trim(),
+          _id: mapped.length
+        });
+      }
+      rawRows = mapped;
+      document.getElementById('file-label').textContent = file.name;
+      document.getElementById('count-num').textContent = rawRows.length;
+      document.getElementById('version-badge').textContent =
+        'VERSION: ' + new Date().toLocaleString('es-UY', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      document.getElementById('status-text').textContent = 'Cargado desde archivo · ' + rawRows.length + ' tareas';
+      // reset filters selects
+      document.getElementById('filter-asignado').innerHTML = '<option value="">Todos</option>';
+      document.getElementById('filter-estado').innerHTML = '<option value="">Todos</option>';
+      filterAsignado = ''; filterEstado = '';
+      populateFilters();
+      buildLegend();
+      computeRange();
+      expanded.clear();
+      [...new Set(rawRows.map(r=>r.etapa))].forEach(e => expanded.add('e:'+e));
+      rawRows.forEach(r => expanded.add('a:'+r.etapa+'|'+r.actividad));
+      render();
+    } catch (err) {
+      alert('Error al leer el archivo: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = '';
+}
+
+function parseCSV(text) {
+  const rows = []; let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i+1];
+    if (inQ) {
+      if (c === '"' && n === '"') { field += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else field += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') {
+        row.push(field); rows.push(row); row = []; field = '';
+        if (c === '\r' && n === '\n') i++;
+      } else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+init();
+</script>
+</body>
+</html>
