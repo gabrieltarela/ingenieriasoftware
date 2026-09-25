@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Tareas y Supabase</title>
+    <!-- Tailwind CSS (CDN Estándar) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS (xlsx) para la exportación a Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { background-color: #1e3175 !important; }
+        @keyframes flash-success {
+            0% { background-color: #bae6fd; }
+            100% { background-color: transparent; }
+        }
+        .saved-flash { animation: flash-success 1s ease-out; }
+
+        /* Contenedor de desplazamiento con barras vertical y horizontal */
+        .scroll-container {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 65vh;
+        }
+
+        /* Altura de filas ajustable y sincronizada globalmente */
+        .sync-row {
+            height: 55px;
+            resize: vertical;
+            overflow: hidden;
+        }
+
+        /* Estilos visuales para el Drag and Drop de columnas */
+        th.draggable-th {
+            cursor: grab;
+            position: relative;
+        }
+        th.draggable-th:active {
+            cursor: grabbing;
+        }
+        th.dragging {
+            opacity: 0.4;
+            background: #1e3175 !important;
+        }
+        th.drag-over {
+            border-left: 3px dashed #93c5fd;
+        }
+
+        /* Tirador para redimensionar con el mouse */
+        .resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            cursor: col-resize;
+            user-select: none;
+            touch-action: none;
+            z-index: 40;
+        }
+        .resizer:hover, .resizing {
+            background-color: #93c5fd;
+        }
+
+        /* Selección definitiva y persistente */
+        tr.row-selected,
+        tr.row-selected > td,
+        tr.row-selected th,
+        tr.row-selected .sticky-sticky-bg {
+            background-color: #D5F0AF !important;
+            --tw-bg-opacity: 1 !important;
+            color: #1e293b !important;
+        }
+
+        /* Cabecera fija verticalmente */
+        #data-table th {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+        }
+
+        /* Clases base para columnas fijas horizontales (Sticky) */
+        .sticky-col-edit { position: sticky; left: 0px; z-index: 35; width: 36px; min-width: 36px; max-width: 36px; }
+        .sticky-col-0    { position: sticky; left: 36px; z-index: 35; width: 70px; min-width: 70px; max-width: 90px; }
+        .sticky-col-1    { position: sticky; left: 106px; z-index: 35; width: 240px; min-width: 100px; box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1); }
+        
+        /* Light mode sticky backgrounds */
+        html:not(.dark) tr.bg-white .sticky-sticky-bg { background-color: #ffffff; }
+        html:not(.dark) tr.bg-slate-100\/70 .sticky-sticky-bg { background-color: #f1f5f9; }
+        html:not(.dark) tr.row-vencida .sticky-sticky-bg { background-color: #fee2e2 !important; }
+        html:not(.dark) tr.row-tardia .sticky-sticky-bg { background-color: #ffedd5 !important; }
+
+        /* Dark mode sticky backgrounds */
+        html.dark tr.bg-slate-900 .sticky-sticky-bg { background-color: #0f172a; }
+        html.dark tr.bg-slate-800\/50 .sticky-sticky-bg { background-color: #1e293b; }
+        html.dark tr.row-vencida .sticky-sticky-bg { background-color: #7f1d1d !important; }
+        html.dark tr.row-tardia .sticky-sticky-bg { background-color: #7c2d12 !important; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Header (Azul Institucional con Título, Botones principales y Acciones) -->
+    <header class="bg-[#2A409C] dark:bg-slate-900 dark:border-b dark:border-slate-800 text-white shadow-md">
+        <div class="w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Título y Botones Principales en la misma fila -->
+            <div class="flex flex-wrap items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+                <h1 class="text-xl font-bold tracking-tight">Gestor de Tareas</h1>
+                <div class="flex items-center gap-2">
+                    <!-- Botón Inicio -->
+                    <button onclick="goHome()" class="bg-[#1e3175] hover:bg-[#162554] dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs border border-blue-800 dark:border-slate-700">
+                        <i class="fa-solid fa-house"></i> Inicio
+                    </button>
+                    <!-- Botón Actualizar -->
+                    <button id="btn-refresh" onclick="loadTableData()" class="bg-[#1e3175] hover:bg-[#162554] dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs border border-blue-800 dark:border-slate-700">
+                        <i class="fa-solid fa-rotate"></i> Actualizar
+                    </button>
+                    <!-- Botón Nueva Tarea -->
+                    <button id="btn-new" onclick="openCreateModal()" class="bg-[#0083B0] hover:bg-[#006e94] text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+                        <i class="fa-solid fa-plus"></i> Nueva Tarea
+                    </button>
+                </div>
+            </div>
+
+            <!-- Botones de Exportación, Tablas Auxiliares, Modo Oscuro y Estado -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <!-- Botón Modo Claro / Oscuro -->
+                <button onclick="toggleDarkMode()" class="bg-[#1e3175] hover:bg-[#162554] dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-100 border border-blue-700 dark:border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-xs" title="Cambiar modo claro / oscuro">
+                    <i id="theme-icon" class="fa-solid fa-moon text-blue-300"></i> <span id="theme-text" class="hidden sm:inline">Modo Oscuro</span>
+                </button>
+
+                <button onclick="exportToExcel()" class="bg-[#1e3175] hover:bg-[#162554] dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-100 border border-blue-700 dark:border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-xs" title="Exportar datos actuales a XLSX">
+                    <i class="fa-solid fa-file-excel text-blue-300"></i> Exportar XLSX
+                </button>
+
+                <button onclick="toggleTablesPanel()" class="bg-[#1e3175] hover:bg-[#162554] dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-100 border border-blue-700 dark:border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-xs">
+                    <i class="fa-solid fa-table-cells"></i> <span id="toggle-btn-text">Ver tablas auxiliares</span>
+                </button>
+                <div class="flex items-center gap-2 text-xs bg-[#192b66] dark:bg-slate-800 text-blue-200 dark:text-slate-300 px-3.5 py-2 rounded-full border border-blue-800 dark:border-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                    <span>Conectado</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Panel Desplegable de Tablas Auxiliares -->
+    <div id="aux-tables-panel" class="hidden bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"><i class="fa-solid fa-database mr-1"></i> Tablas auxiliares del sistema (Solo Lectura)</h3>
+                <button onclick="toggleTablesPanel()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+            </div>
+            <div id="tables-list" class="flex flex-wrap gap-2">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="w-full px-6 py-6 flex-1 flex flex-col gap-6">
+        
+        <!-- Content Area -->
+        <section class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-6 flex-1 overflow-hidden transition-colors">
+            
+            <!-- Contenedor del Panel de Filtros Colapsable -->
+            <div id="wrapper-filters" class="flex flex-col gap-2">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <button onclick="toggleFiltersPanel()" class="text-xs font-semibold text-[#2A409C] dark:text-blue-400 hover:text-[#1e3175] flex items-center gap-1.5 cursor-pointer">
+                        <i id="filter-toggle-icon" class="fa-solid fa-chevron-down text-[10px]"></i> 
+                        <span id="filter-toggle-text">Ocultar filtros de búsqueda</span>
+                    </button>
+
+                    <!-- Caja de texto y botón buscar alineados a la derecha -->
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <div class="relative flex-1 md:w-64">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 pointer-events-none">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="input-buscar-nombre" oninput="applyFilters()" placeholder="Buscar por nombre..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0] focus:bg-white dark:focus:bg-slate-900 transition">
+                        </div>
+                        <button onclick="applyFilters()" class="bg-[#0083B0] hover:bg-[#006e94] text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0">
+                            Buscar
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                            <input type="checkbox" id="check-mostrar-archivadas" onchange="applyFilters()" class="rounded border-slate-300 dark:border-slate-700 text-[#0083B0] focus:ring-[#0083B0] w-4 h-4 cursor-pointer bg-transparent">
+                            Mostrar Archivadas
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                            <input type="checkbox" id="check-top-scrollbar" onchange="toggleTopScrollbar(this)" class="rounded border-slate-300 dark:border-slate-700 text-[#0083B0] focus:ring-[#0083B0] w-4 h-4 cursor-pointer bg-transparent">
+                            Scroll Bar Superior
+                        </label>
+                    </div>
+                </div>
+
+                <div id="filters-container" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-xl flex flex-wrap items-end gap-3 transition-all duration-300">
+                    <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+                        <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400">Estado</label>
+                        <select id="filter-estado" onchange="applyFilters()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0]">
+                            <option value="">Todos los estados</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+                        <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400">Usuario</label>
+                        <select id="filter-usuario" onchange="applyFilters()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0]">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro Cumplimiento -->
+                    <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+                        <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400">Cumplimiento</label>
+                        <select id="filter-cumplimiento" onchange="applyFilters()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0]">
+                            <option value="">Todos</option>
+                            <option value="en_curso">En Curso</option>
+                            <option value="agendadas">Agendadas</option>
+                            <option value="atrasadas">Atrasadas</option>
+                            <option value="vencidas">Vencidas</option>
+                            <option value="tardia">Entrega Tardía</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+                        <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400">Fecha Asignada</label>
+                        <input type="date" id="filter-f-asignada" onchange="applyFilters()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0]">
+                    </div>
+
+                    <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+                        <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400">Fecha Vencimiento</label>
+                        <input type="date" id="filter-f-vencimiento" onchange="applyFilters()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0]">
+                    </div>
+
+                    <div class="flex items-end">
+                        <button onclick="clearFilters()" class="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer h-[30px]" title="Limpiar filtros">
+                            <i class="fa-solid fa-filter-circle-xmark"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenedor con Barras de Desplazamiento (Vertical y Horizontal) -->
+            <div class="flex flex-col flex-1 border border-slate-100 dark:border-slate-700 rounded-lg overflow-hidden">
+                <div id="top-scrollbar" class="overflow-x-auto bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 hidden" onscroll="syncScroll('top')">
+                    <div id="top-scrollbar-content" class="h-2"></div>
+                </div>
+
+                <div id="bottom-scrollbar" class="scroll-container bg-white dark:bg-slate-900" onscroll="syncScroll('bottom')">
+                    <table id="data-table" class="w-full text-left border-collapse min-w-[1100px]" style="table-layout: fixed;">
+                        <thead id="table-head" class="text-xs uppercase font-semibold border-b border-slate-800 dark:border-slate-700">
+                            <tr>
+                                <th class="p-3 text-center" style="background-color: #2A409C; color: #ffffff;">Cargando datos...</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-200">
+                            <tr>
+                                <td class="p-8 text-center text-slate-400 italic">Cargando registros de Supabase...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <p id="table-instructions" class="text-[11px] text-slate-400 italic text-right"><i class="fa-solid fa-bolt mr-1"></i> Haz un clic para seleccionar una fila, arrastra el borde derecho de las cabeceras para cambiar su ancho, o arrastra las cabeceras para reordenar columnas.</p>
+        </section>
+    </main>
+
+    <!-- Modal para Crear/Editar Registro -->
+    <div id="record-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[92vh] overflow-hidden border border-slate-200 dark:border-slate-700">
+            
+            <div class="bg-[#2A409C] dark:bg-slate-800 text-white px-6 py-3.5 flex justify-between items-center shadow-inner shrink-0">
+                <h3 id="modal-title" class="text-base font-bold">Nuevo Registro</h3>
+                <button onclick="closeModal()" class="text-white/80 hover:text-white p-1.5 rounded-lg transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="record-form" onsubmit="saveNewRecord(event)" class="flex flex-col flex-1 overflow-hidden bg-slate-50/50 dark:bg-slate-900/50">
+                <div id="form-fields" class="p-5 grid grid-cols-1 md:grid-cols-3 gap-3 overflow-y-auto flex-1">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                
+                <div class="px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3 shrink-0 bg-white dark:bg-slate-900">
+                    <button type="button" onclick="closeModal()" class="px-5 py-2 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold shadow-xs transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-6 py-2 bg-[#0083B0] hover:bg-[#006e94] text-white rounded-lg text-xs font-semibold shadow-md transition cursor-pointer">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de Lógica -->
+    <script>
+        const SUPABASE_URL = "https://pefmjjtmnhawtqjwmkme.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_ptwqt2I3mu9WTfB2Zz6hOg__WoACVSE";
+
+        const defaultTareasOrder = [
+            'orden', 'nombre', 'id_usuario', 'id_estado', 'fecha_asignada', 
+            'fecha_vencimiento', 'fecha_entregada', 'id_evaluacion', 
+            'id_motivo', 'porcentaje_avance', 'observaciones', 
+            'id_situacion', 'id_predecesor', 
+            'fecha_creada', 'id_actividad', 'id_etapa'
+        ];
+
+        const dbSchema = {
+            tareas: ['id', ...defaultTareasOrder],
+            actividad: ['id', 'id_etapa', 'nombre', 'color'],
+            estados: ['id', 'nombre', 'color'],
+            etapas: ['id', 'nombre', 'color'],
+            evaluaciones: ['id', 'nombre', 'color'],
+            jerarquia: ['id', 'nombre', 'color'],
+            motivos: ['id', 'nombre', 'color'],
+            situaciones: ['id', 'nombre', 'color'],
+            usuarios: ['id', 'nombre', 'celular', 'email', 'color']
+        };
+
+        const foreignKeyTables = {
+            'id_etapa': 'etapas',
+            'id_jerarquia': 'jerarquia',
+            'id_estado': 'estados',
+            'id_situacion': 'situaciones',
+            'id_usuario': 'usuarios',
+            'id_evaluacion': 'evaluaciones',
+            'id_actividad': 'actividad',
+            'id_motivo': 'motivos'
+        };
+
+        let supabaseClient = null;
+        let currentTable = 'tareas';
+        let currentTableData = [];
+        let filteredTableData = [];
+        let cacheForeignData = {};
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        let globalRowHeight = 55; 
+
+        let customColumnOrders = {
+            tareas: [...defaultTareasOrder]
+        };
+
+        let draggedColumnIndex = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                renderAuxTablesList();
+                populateFilterDropdowns();
+                selectTable('tareas');
+            } catch (err) {
+                alert('Error al inicializar la conexión con Supabase: ' + err.message);
+            }
+        });
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                updateThemeUI(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateThemeUI(false);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeUI(isDark);
+        }
+
+        function updateThemeUI(isDark) {
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+            if (isDark) {
+                icon.className = 'fa-solid fa-sun text-yellow-300';
+                if (text) text.innerText = 'Modo Claro';
+            } else {
+                icon.className = 'fa-solid fa-moon text-blue-300';
+                if (text) text.innerText = 'Modo Oscuro';
+            }
+        }
+
+        function goHome() {
+            selectTable('tareas');
+            clearFilters();
+        }
+
+        function syncScroll(source) {
+            const topBar = document.getElementById('top-scrollbar');
+            const bottomBar = document.getElementById('bottom-scrollbar');
+            if (source === 'top') {
+                bottomBar.scrollLeft = topBar.scrollLeft;
+            } else {
+                topBar.scrollLeft = bottomBar.scrollLeft;
+            }
+        }
+
+        function updateScrollbarsWidth() {
+            const table = document.getElementById('data-table');
+            const topContent = document.getElementById('top-scrollbar-content');
+            if (table && topContent) {
+                topContent.style.width = table.scrollWidth + 'px';
+            }
+        }
+
+        function toggleTopScrollbar(checkbox) {
+            const topBar = document.getElementById('top-scrollbar');
+            if (checkbox.checked) {
+                topBar.classList.remove('hidden');
+                updateScrollbarsWidth();
+            } else {
+                topBar.classList.add('hidden');
+            }
+        }
+
+        function toggleFiltersPanel() {
+            const container = document.getElementById('filters-container');
+            const icon = document.getElementById('filter-toggle-icon');
+            const text = document.getElementById('filter-toggle-text');
+            
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                container.classList.add('flex');
+                icon.className = 'fa-solid fa-chevron-down text-[10px]';
+                text.innerText = 'Ocultar filtros de búsqueda';
+            } else {
+                container.classList.remove('flex');
+                container.classList.add('hidden');
+                icon.className = 'fa-solid fa-chevron-right text-[10px]';
+                text.innerText = 'Mostrar filtros de búsqueda';
+            }
+        }
+
+        async function populateFilterDropdowns() {
+            try {
+                await loadCatalogIntoSelect('estados', 'filter-estado');
+                await loadCatalogIntoSelect('usuarios', 'filter-usuario');
+            } catch (e) {
+                console.error("Error al poblar filtros:", e);
+            }
+        }
+
+        async function loadCatalogIntoSelect(tableName, selectId) {
+            const select = document.getElementById(selectId);
+            if (!cacheForeignData[tableName]) {
+                const { data, error } = await supabaseClient.from(tableName).select('id, nombre, color');
+                if (!error) {
+                    cacheForeignData[tableName] = data || [];
+                }
+            }
+            const records = cacheForeignData[tableName] || [];
+            records.forEach(rec => {
+                const opt = document.createElement('option');
+                opt.value = rec.id;
+                opt.innerText = rec.nombre;
+                select.appendChild(opt);
+            });
+        }
+
+        function toggleTablesPanel() {
+            const panel = document.getElementById('aux-tables-panel');
+            const btnText = document.getElementById('toggle-btn-text');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                btnText.innerText = 'Ocultar tablas auxiliares';
+            } else {
+                panel.classList.add('hidden');
+                btnText.innerText = 'Ver tablas auxiliares';
+            }
+        }
+
+        function renderAuxTablesList() {
+            const listContainer = document.getElementById('tables-list');
+            listContainer.innerHTML = '';
+
+            Object.keys(dbSchema).forEach(tableName => {
+                if (tableName === 'tareas') return;
+
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 cursor-pointer ${currentTable === tableName ? 'bg-[#2A409C] text-white font-semibold shadow-sm' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600'}`;
+                btn.innerHTML = `<i class="fa-solid fa-table"></i> ${tableName}`;
+                btn.onclick = () => {
+                    selectTable(tableName);
+                    toggleTablesPanel();
+                };
+                listContainer.appendChild(btn);
+            });
+        }
+
+        async function selectTable(tableName) {
+            currentTable = tableName;
+            sortColumn = null;
+            sortDirection = 'asc';
+            
+            if (currentTable === 'tareas') {
+                sortColumn = 'orden';
+                sortDirection = 'asc';
+            }
+
+            renderAuxTablesList();
+            
+            if (!customColumnOrders[currentTable]) {
+                customColumnOrders[currentTable] = [...(dbSchema[currentTable] || [])].filter(c => c !== 'id');
+            }
+
+            const wrapperFilters = document.getElementById('wrapper-filters');
+            const btnNew = document.getElementById('btn-new');
+            const instructions = document.getElementById('table-instructions');
+
+            if (tableName === 'tareas') {
+                wrapperFilters.classList.remove('hidden');
+                wrapperFilters.classList.add('flex');
+                btnNew.style.display = 'inline-flex';
+                instructions.innerHTML = '<i class="fa-solid fa-bolt mr-1"></i> Haz un clic para seleccionar una fila, arrastra el borde derecho de las cabeceras para cambiar su ancho, o arrastra las cabeceras para reordenar columnas.';
+            } else {
+                wrapperFilters.classList.remove('flex');
+                wrapperFilters.classList.add('hidden');
+                btnNew.style.display = 'none';
+                instructions.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Esta es una tabla auxiliar de solo lectura.';
+            }
+
+            await loadTableData();
+        }
+
+        async function loadTableData() {
+            const ahora = new Date().toLocaleString('es-UY');
+            let historial = JSON.parse(localStorage.getItem('historial_actualizaciones')) || [];
+            historial.push(`Click en actualizar: ${ahora}`);
+            localStorage.setItem('historial_actualizaciones', JSON.stringify(historial));
+
+            if (!supabaseClient || !currentTable) return;
+
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '<tr><td colspan="100" class="p-8 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando registros...</td></tr>';
+
+            try {
+                let query = supabaseClient.from(currentTable).select('*');
+
+                if (currentTable === 'tareas') {
+                    query = supabaseClient.from('tareas').select(`
+                        id, orden, nombre, observaciones, porcentaje_avance,
+                        fecha_creada, fecha_asignada, fecha_vencimiento, fecha_entregada, id_predecesor,
+                        id_etapa, id_estado, id_situacion, id_usuario, id_evaluacion, id_actividad, id_motivo,
+                        etapas:id_etapa(nombre, color),
+                        estados:id_estado(nombre, color),
+                        situaciones:id_situacion(nombre, color),
+                        usuarios:id_usuario(nombre, color),
+                        evaluaciones:id_evaluacion(nombre, color),
+                        actividad:id_actividad(nombre, color),
+                        motivos:id_motivo(nombre, color)
+                    `);
+                }
+
+                const { data, error } = await query.limit(100);
+                if (error) throw error;
+                currentTableData = data || [];
+                filteredTableData = [...currentTableData];
+
+                if (currentTable === 'tareas') {
+                    if (!sortColumn) {
+                        sortColumn = 'orden';
+                        sortDirection = 'asc';
+                    }
+                    applyFilters();
+                } else {
+                    renderTableContent();
+                }
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="100" class="p-6 text-center text-rose-500 bg-rose-50 dark:bg-rose-950/50 rounded">Error al cargar datos: ${err.message}</td></tr>`;
+            }
+        }
+
+        function applyFilters() {
+            if (currentTable !== 'tareas') return;
+
+            const estadoVal = document.getElementById('filter-estado').value;
+            const usuarioVal = document.getElementById('filter-usuario').value;
+            const cumplimientoVal = document.getElementById('filter-cumplimiento').value;
+            const fAsignadaVal = document.getElementById('filter-f-asignada').value;
+            const fVencimientoVal = document.getElementById('filter-f-vencimiento').value;
+            const mostrarArchivadas = document.getElementById('check-mostrar-archivadas').checked;
+            const textBuscar = document.getElementById('input-buscar-nombre').value.toLowerCase().trim();
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            filteredTableData = currentTableData.filter(row => {
+                if (!mostrarArchivadas && Number(row.id_estado) === 7) return false;
+                if (estadoVal && String(row.id_estado) !== estadoVal) return false;
+                if (usuarioVal && String(row.id_usuario) !== usuarioVal) return false;
+                if (fAsignadaVal && (!row.fecha_asignada || row.fecha_asignada !== fAsignadaVal)) return false;
+                if (fVencimientoVal && (!row.fecha_vencimiento || row.fecha_vencimiento !== fVencimientoVal)) return false;
+                
+                if (textBuscar) {
+                    const nombreRow = row.nombre ? String(row.nombre).toLowerCase() : '';
+                    if (!nombreRow.includes(textBuscar)) return false;
+                }
+
+                if (cumplimientoVal) {
+                    const fAsig = row.fecha_asignada;
+                    const fVenc = row.fecha_vencimiento;
+                    const fEnt = row.fecha_entregada;
+
+                    if (cumplimientoVal === 'en_curso') {
+                        if (!fAsig || !fVenc || !(todayStr >= fAsig && todayStr <= fVenc)) return false;
+                    } else if (cumplimientoVal === 'agendadas') {
+                        if (!fAsig || fAsig <= todayStr) return false;
+                    } else if (cumplimientoVal === 'atrasadas') {
+                        if (fEnt || !fVenc || fVenc >= todayStr) return false;
+                    } else if (cumplimientoVal === 'vencidas') {
+                        if (!fVenc || fVenc >= todayStr) return false;
+                    } else if (cumplimientoVal === 'tardia') {
+                        if (!fEnt || !fVenc || fEnt <= fVenc) return false;
+                    }
+                }
+
+                return true;
+            });
+
+            sortAndRender();
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-estado').value = '';
+            document.getElementById('filter-usuario').value = '';
+            document.getElementById('filter-cumplimiento').value = '';
+            document.getElementById('filter-f-asignada').value = '';
+            document.getElementById('filter-f-vencimiento').value = '';
+            document.getElementById('check-mostrar-archivadas').checked = false;
+            document.getElementById('input-buscar-nombre').value = '';
+            applyFilters();
+        }
+
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            sortAndRender();
+        }
+
+        function sortAndRender() {
+            if (sortColumn) {
+                filteredTableData.sort((a, b) => {
+                    let valA = a[sortColumn];
+                    let valB = b[sortColumn];
+
+                    if (foreignKeyTables[sortColumn]) {
+                        const rel = foreignKeyTables[sortColumn];
+                        valA = a[rel]?.nombre || '';
+                        valB = b[rel]?.nombre || '';
+                    }
+
+                    if (valA === null || valA === undefined) valA = '';
+                    if (valB === null || valB === undefined) valB = '';
+
+                    if (sortColumn === 'id' || sortColumn === 'orden') {
+                        valA = Number(valA) || 0;
+                        valB = Number(valB) || 0;
+                    } else if (typeof valA === 'string') {
+                        valA = valA.toLowerCase();
+                        valB = valB.toLowerCase();
+                    }
+
+                    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            renderTableContent();
+        }
+
+        function handleRowClick(trElement) {
+            document.querySelectorAll('#data-table tbody tr').forEach(tr => {
+                tr.classList.remove('row-selected');
+            });
+            trElement.classList.add('row-selected');
+        }
+
+        function handleDragStart(e, index) {
+            draggedColumnIndex = index;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e, index) {
+            e.preventDefault();
+            const th = e.target.closest('th');
+            if (th && index !== draggedColumnIndex) {
+                th.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            const th = e.target.closest('th');
+            if (th) {
+                th.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e, targetIndex) {
+            e.preventDefault();
+            const th = e.target.closest('th');
+            if (th) th.classList.remove('drag-over');
+
+            if (draggedColumnIndex === null || draggedColumnIndex === targetIndex) return;
+
+            const columns = customColumnOrders[currentTable];
+            const movedColumn = columns.splice(draggedColumnIndex, 1)[0];
+            columns.splice(targetIndex, 0, movedColumn);
+
+            draggedColumnIndex = null;
+            renderTableContent();
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('th').forEach(el => el.classList.remove('drag-over'));
+            draggedColumnIndex = null;
+        }
+
+        function makeResizable(th) {
+            const resizer = document.createElement('div');
+            resizer.className = 'resizer';
+            th.appendChild(resizer);
+
+            let startX, startWidth;
+
+            resizer.addEventListener('mousedown', function(e) {
+                e.stopPropagation();
+                startX = e.pageX;
+                startWidth = th.offsetWidth;
+                resizer.classList.add('resizing');
+
+                function onMouseMove(e) {
+                    const diff = e.pageX - startX;
+                    const newWidth = Math.max(50, startWidth + diff);
+                    th.style.width = newWidth + 'px';
+                    th.style.minWidth = newWidth + 'px';
+                    th.style.maxWidth = newWidth + 'px';
+
+                    if (currentTable === 'tareas') {
+                        updateStickyPositions();
+                    }
+                }
+
+                function onMouseUp() {
+                    resizer.classList.remove('resizing');
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    updateScrollbarsWidth();
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        }
+
+        function updateStickyPositions() {
+            const thEdit = document.querySelector('.sticky-col-edit');
+            const th0 = document.querySelector('.sticky-col-0');
+            const th1 = document.querySelector('.sticky-col-1');
+
+            let left0 = thEdit ? thEdit.offsetWidth : 36;
+            let left1 = left0 + (th0 ? th0.offsetWidth : 70);
+
+            if (thEdit) thEdit.style.left = '0px';
+            if (th0) th0.style.left = left0 + 'px';
+            if (th1) th1.style.left = left1 + 'px';
+
+            document.querySelectorAll('#data-table tbody tr').forEach(tr => {
+                const tdEdit = tr.querySelector('.sticky-col-edit');
+                const td0 = tr.querySelector('.sticky-col-0');
+                const td1 = tr.querySelector('.sticky-col-1');
+
+                if (tdEdit) tdEdit.style.left = '0px';
+                if (td0) td0.style.left = left0 + 'px';
+                if (td1) td1.style.left = left1 + 'px';
+            });
+        }
+
+        function renderTableContent() {
+            const thead = document.getElementById('table-head');
+            const tbody = document.getElementById('table-body');
+            const columns = customColumnOrders[currentTable] || dbSchema[currentTable] || [];
+            const dataset = currentTable === 'tareas' ? filteredTableData : currentTableData;
+            const isReadonly = currentTable !== 'tareas';
+
+            let headHtml = '<tr>';
+            
+            if (currentTable === 'tareas') {
+                headHtml += `<th class="p-3 text-center sticky-col-edit" style="background-color: #2A409C; color: #ffffff; z-index: 40;"><i class="fa-solid fa-pen"></i></th>`;
+                headHtml += `<th class="p-3 font-semibold capitalize sortable sticky-col-0" style="background-color: #2A409C; color: #ffffff; z-index: 40;" onclick="sortTable('orden')">ord${sortColumn === 'orden' ? (sortDirection === 'asc' ? ' <i class="fa-solid fa-arrow-up text-[10px]"></i>' : ' <i class="fa-solid fa-arrow-down text-[10px]"></i>') : ''}</th>`;
+                headHtml += `<th class="p-3 font-semibold capitalize sortable sticky-col-1" style="background-color: #2A409C; color: #ffffff; z-index: 40;" onclick="sortTable('nombre')">Nombre</th>`;
+            }
+
+            columns.forEach((col, index) => {
+                if (currentTable === 'tareas' && (col === 'id' || col === 'orden' || col === 'nombre')) return;
+                if (col === 'color' && currentTable !== 'tareas') return;
+                if (currentTable === 'tareas' && (col === 'jerarquia' || col === 'apertura')) return;
+                
+                let colTitle = col;
+                if (currentTable === 'tareas' && foreignKeyTables[col]) {
+                    colTitle = foreignKeyTables[col];
+                }
+                const isWide = ['fecha_asignada', 'fecha_vencimiento', 'fecha_entregada', 'id_evaluacion', 'id_motivo'].includes(col);
+                const widthStyle = isWide ? 'width: 140px; min-width: 140px;' : 'width: 120px; min-width: 100px;';
+                const sortIcon = sortColumn === col ? (sortDirection === 'asc' ? ' <i class="fa-solid fa-arrow-up text-[10px]"></i>' : ' <i class="fa-solid fa-arrow-down text-[10px]"></i>') : '';
+                
+                headHtml += `<th draggable="true" 
+                                ondragstart="handleDragStart(event, ${index})" 
+                                ondragover="handleDragOver(event)" 
+                                ondragenter="handleDragEnter(event, ${index})" 
+                                ondragleave="handleDragLeave(event)" 
+                                ondrop="handleDrop(event, ${index})" 
+                                ondragend="handleDragEnd(event)" 
+                                class="p-3 font-semibold capitalize sortable draggable-th" 
+                                style="background-color: #2A409C; color: #ffffff; ${widthStyle}" 
+                                title="Arrastra para mover de posición"
+                                onclick="if(event.target.tagName !== 'I' && !event.target.classList.contains('resizer')) sortTable('${col}')">${colTitle.replace('_', ' ')}${sortIcon}</th>`;
+            });
+            if (!isReadonly) {
+                headHtml += '<th class="p-3 text-right" style="background-color: #2A409C; color: #ffffff; width: 80px; min-width: 80px;">Acciones</th>';
+            }
+            headHtml += '</tr>';
+            thead.innerHTML = headHtml;
+
+            thead.querySelectorAll('th').forEach(th => makeResizable(th));
+
+            if (dataset.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${columns.length + 2}" class="p-8 text-center text-slate-400 italic">No se encontraron registros.</td></tr>`;
+                updateScrollbarsWidth();
+                return;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            let bodyHtml = '';
+            dataset.forEach((row, rowIndex) => {
+                const recordId = row.id;
+
+                const fVenc = row.fecha_vencimiento;
+                const fEnt = row.fecha_entregada;
+                let rowColorClass = rowIndex % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-100/70 dark:bg-slate-800/50';
+
+                if (currentTable === 'tareas') {
+                    const isVencidaSinEntrega = fVenc && fVenc < todayStr && !fEnt;
+                    const isEntregaTardia = fEnt && fVenc && fEnt > fVenc;
+
+                    if (isVencidaSinEntrega) {
+                        rowColorClass = 'row-vencida bg-red-100 dark:bg-red-950/40';
+                    } else if (isEntregaTardia) {
+                        rowColorClass = 'row-tardia bg-orange-100 dark:bg-amber-950/40';
+                    }
+                }
+
+                bodyHtml += `<tr id="row-${recordId}" class="sync-row ${rowColorClass} hover:opacity-90 transition" style="height: ${globalRowHeight}px;" onmouseup="syncAllRowHeights(this)">`;
+                
+                if (currentTable === 'tareas') {
+                    bodyHtml += `<td class="p-2 text-center sticky-col-edit sticky-sticky-bg h-full align-middle cursor-pointer" onclick="handleRowClick(this.closest('tr'))">
+                        <button onclick="openEditModal('${recordId}')" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 p-1 rounded transition cursor-pointer" title="Modificar tarea">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                    </td>`;
+
+                    const ordenVal = row['orden'] !== null && row['orden'] !== undefined ? row['orden'] : '';
+                    bodyHtml += `<td class="p-2 editable-cell sticky-col-0 sticky-sticky-bg text-center text-[11px] font-medium h-full align-middle cursor-pointer" onclick="handleRowClick(this.closest('tr'))" ondblclick="makeCellEditable(this, '${recordId}', 'orden', 'text')">
+                        ${ordenVal !== '' ? ordenVal : '<span class="text-slate-300 dark:text-slate-600 italic">-</span>'}
+                    </td>`;
+
+                    const nVal = row['nombre'] !== null && row['nombre'] !== undefined ? row['nombre'] : '';
+                    bodyHtml += `<td class="p-2 editable-cell sticky-col-1 sticky-sticky-bg font-medium h-full align-middle truncate cursor-pointer" onclick="handleRowClick(this.closest('tr'))" ondblclick="makeCellEditable(this, '${recordId}', 'nombre', 'text')">
+                        ${nVal !== '' ? nVal : '<span class="text-slate-300 dark:text-slate-600 italic">Vacío</span>'}
+                    </td>`;
+                }
+
+                columns.forEach(col => {
+                    if (currentTable === 'tareas' && (col === 'id' || col === 'orden' || col === 'nombre')) return;
+                    if (col === 'color' && currentTable !== 'tareas') return;
+                    if (currentTable === 'tareas' && (col === 'jerarquia' || col === 'apertura')) return;
+
+                    let val = row[col];
+
+                    if (currentTable === 'tareas' && foreignKeyTables[col]) {
+                        const relTable = foreignKeyTables[col];
+                        const relName = row[relTable] && row[relTable].nombre ? row[relTable].nombre : 'Sin asignar';
+                        const relColor = row[relTable] && row[relTable].color ? row[relTable].color : '#64748b';
+                        
+                        bodyHtml += `<td class="p-2 ${isReadonly ? '' : 'editable-cell'} h-full align-middle cursor-pointer" onclick="handleRowClick(this.closest('tr'))" ${isReadonly ? '' : `ondblclick="makeCellEditable(this, '${recordId}', '${col}', 'select', '${relTable}')"`}>
+                            <span class="w-full block text-center px-2 py-1 rounded text-[11px] font-medium text-white shadow-xs cursor-pointer" style="background-color: ${relColor};">${relName}</span>
+                        </td>`;
+                    } else if (col.includes('fecha')) {
+                        const dateVal = val || '';
+                        bodyHtml += `<td class="p-2 ${isReadonly ? '' : 'editable-cell'} h-full align-middle text-[11px] cursor-pointer" onclick="handleRowClick(this.closest('tr'))" ${isReadonly ? '' : `ondblclick="makeCellEditable(this, '${recordId}', '${col}', 'date')"`}>
+                            ${dateVal ? dateVal : '<span class="text-slate-300 dark:text-slate-600 italic">Fecha</span>'}
+                        </td>`;
+                    } else if (col === 'color' && currentTable !== 'tareas') {
+                        bodyHtml += `<td class="p-2 h-full align-middle cursor-pointer" onclick="handleRowClick(this.closest('tr'))">
+                            <span class="w-full block text-center px-2 py-1 rounded text-[11px] font-semibold text-white" style="background-color: ${val};">${val}</span>
+                        </td>`;
+                    } else {
+                        const displayVal = (val !== null && val !== undefined) ? val : '';
+                        bodyHtml += `<td class="p-2 ${isReadonly ? '' : 'editable-cell'} truncate h-full align-middle cursor-pointer" onclick="handleRowClick(this.closest('tr'))" ${isReadonly ? '' : `ondblclick="makeCellEditable(this, '${recordId}', '${col}', 'text')"`}>
+                            ${displayVal !== '' ? displayVal : '<span class="text-slate-300 dark:text-slate-600 italic">Vacío</span>'}
+                        </td>`;
+                    }
+                });
+                
+                if (!isReadonly) {
+                    bodyHtml += `<td class="p-3 text-right h-full align-middle cursor-pointer" onclick="handleRowClick(this.closest('tr'))">
+                        <button onclick="deleteRecord('${recordId}')" class="text-slate-400 hover:text-rose-600 p-1 rounded transition cursor-pointer" title="Eliminar registro">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </td>`;
+                }
+                bodyHtml += '</tr>';
+            });
+            tbody.innerHTML = bodyHtml;
+            
+            if (currentTable === 'tareas') {
+                updateStickyPositions();
+            }
+            setTimeout(updateScrollbarsWidth, 50);
+        }
+
+        function syncAllRowHeights(changedRowElement) {
+            const newHeight = changedRowElement.offsetHeight;
+            if (newHeight !== globalRowHeight) {
+                globalRowHeight = newHeight;
+                const allRows = document.querySelectorAll('.sync-row');
+                allRows.forEach(row => {
+                    row.style.height = `${globalRowHeight}px`;
+                });
+            }
+        }
+
+        async function makeCellEditable(cellElement, recordId, columnName, type, relTable = null) {
+            if (currentTable !== 'tareas') return;
+            if (cellElement.querySelector('input, select')) return;
+
+            const rowObj = currentTableData.find(r => r.id == recordId);
+            const currentValue = rowObj ? rowObj[columnName] : '';
+            cellElement.innerHTML = '';
+
+            if (type === 'select' && relTable) {
+                const select = document.createElement('select');
+                select.className = 'bg-white dark:bg-slate-800 border border-[#0083B0] rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none shadow-sm w-full';
+
+                if (!cacheForeignData[relTable]) {
+                    const { data } = await supabaseClient.from(relTable).select('id, nombre, color');
+                    cacheForeignData[relTable] = data || [];
+                }
+
+                const options = cacheForeignData[relTable] || [];
+                options.forEach(opt => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = opt.id;
+                    optionEl.innerText = opt.nombre;
+                    if (opt.id == currentValue) optionEl.selected = true;
+                    select.appendChild(optionEl);
+                });
+
+                select.onchange = async () => {
+                    await updateCellDataInBackground(cellElement, recordId, columnName, select.value, type, relTable);
+                };
+                select.onblur = async () => {
+                    if (select.value != currentValue) {
+                        await updateCellDataInBackground(cellElement, recordId, columnName, select.value, type, relTable);
+                    } else {
+                        restoreCellContent(cellElement, rowObj, columnName, type, relTable);
+                    }
+                };
+
+                cellElement.appendChild(select);
+                select.focus();
+                if (typeof select.showPicker === 'function') {
+                    try { select.showPicker(); } catch(e) {}
+                }
+            } else if (type === 'date') {
+                const input = document.createElement('input');
+                input.type = 'date';
+                input.value = currentValue || '';
+                input.className = 'bg-white dark:bg-slate-800 border border-[#0083B0] rounded px-2 py-1 text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none shadow-sm w-full';
+
+                input.onchange = async () => {
+                    await updateCellDataInBackground(cellElement, recordId, columnName, input.value, type, relTable);
+                };
+                input.onblur = async () => {
+                    if (input.value !== currentValue) {
+                        await updateCellDataInBackground(cellElement, recordId, columnName, input.value, type, relTable);
+                    } else {
+                        restoreCellContent(cellElement, rowObj, columnName, type, relTable);
+                    }
+                };
+
+                cellElement.appendChild(input);
+                input.focus();
+                if (typeof input.showPicker === 'function') {
+                    try { input.showPicker(); } catch(e) {}
+                }
+            } else {
+                const input = document.createElement('input');
+                input.type = (columnName.includes('porcentaje') || columnName === 'orden') ? 'number' : 'text';
+                input.value = currentValue !== null && currentValue !== undefined ? currentValue : '';
+                input.className = 'bg-white dark:bg-slate-800 border border-[#0083B0] rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none shadow-sm w-full';
+
+                input.onkeydown = async (e) => {
+                    if (e.key === 'Enter') {
+                        await updateCellDataInBackground(cellElement, recordId, columnName, input.value, type, relTable);
+                    }
+                };
+                input.onblur = async () => {
+                    if (input.value !== String(currentValue)) {
+                        await updateCellDataInBackground(cellElement, recordId, columnName, input.value, type, relTable);
+                    } else {
+                        restoreCellContent(cellElement, rowObj, columnName, type, relTable);
+                    }
+                };
+
+                cellElement.appendChild(input);
+                input.focus();
+            }
+        }
+
+        async function updateCellDataInBackground(cellElement, recordId, columnName, newValue, type, relTable) {
+            let processedValue = newValue;
+            if (newValue === '' || newValue === null) {
+                processedValue = null;
+            } else if (!isNaN(newValue) && newValue.trim() !== '' && columnName !== 'color' && !columnName.includes('fecha')) {
+                processedValue = Number(newValue);
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from(currentTable)
+                    .update({ [columnName]: processedValue })
+                    .eq('id', recordId);
+
+                if (error) throw error;
+
+                const rowObj = currentTableData.find(r => r.id == recordId);
+                if (rowObj) {
+                    rowObj[columnName] = processedValue;
+
+                    if (foreignKeyTables[columnName]) {
+                        const rel = foreignKeyTables[columnName];
+                        const matchedCat = (cacheForeignData[rel] || []).find(item => item.id == processedValue);
+                        if (matchedCat) {
+                            rowObj[rel] = { nombre: matchedCat.nombre, color: matchedCat.color };
+                        } else {
+                            rowObj[rel] = null;
+                        }
+                    }
+                }
+
+                if (foreignKeyTables[columnName]) {
+                    const rel = foreignKeyTables[columnName];
+                    const matchedCat = (cacheForeignData[rel] || []).find(item => item.id == processedValue);
+                    if (matchedCat) {
+                        cellElement.innerHTML = `<span class="w-full block text-center px-2 py-1 rounded text-[11px] font-medium text-white shadow-xs cursor-pointer" style="background-color: ${matchedCat.color};">${matchedCat.nombre}</span>`;
+                    } else {
+                        cellElement.innerHTML = `<span class="text-slate-300 dark:text-slate-600 italic">Sin asignar</span>`;
+                    }
+                } else if (columnName.includes('fecha')) {
+                    cellElement.innerHTML = processedValue ? processedValue : '<span class="text-slate-300 dark:text-slate-600 italic">Fecha</span>';
+                } else {
+                    cellElement.innerHTML = (processedValue !== null && processedValue !== undefined && processedValue !== '') ? processedValue : '<span class="text-slate-300 dark:text-slate-600 italic">Vacío</span>';
+                }
+
+                cellElement.classList.add('saved-flash');
+                setTimeout(() => cellElement.classList.remove('saved-flash'), 1000);
+
+                if (currentTable === 'tareas' && (columnName === 'fecha_vencimiento' || columnName === 'fecha_entregada' || columnName === 'id_estado')) {
+                    updateRowColorClasses(recordId);
+                }
+
+            } catch (err) {
+                alert('Error al guardar en la base de datos: ' + err.message);
+                loadTableData();
+            }
+        }
+
+        function updateRowColorClasses(recordId) {
+            const rowObj = currentTableData.find(r => r.id == recordId);
+            const trElement = document.getElementById(`row-${recordId}`);
+            if (!rowObj || !trElement) return;
+
+            trElement.classList.remove('row-vencida', 'row-tardia', 'bg-red-100', 'bg-orange-100', 'bg-white', 'bg-slate-100/70', 'dark:bg-red-950/40', 'dark:bg-amber-950/40', 'dark:bg-slate-900', 'dark:bg-slate-800/50');
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const fVenc = rowObj.fecha_vencimiento;
+            const fEnt = rowObj.fecha_entregada;
+            
+            const isVencidaSinEntrega = fVenc && fVenc < todayStr && !fEnt;
+            const isEntregaTardia = fEnt && fVenc && fEnt > fVenc;
+
+            const rowIndex = filteredTableData.findIndex(r => r.id == recordId);
+
+            if (isVencidaSinEntrega) {
+                trElement.classList.add('row-vencida', 'bg-red-100', 'dark:bg-red-950/40');
+            } else if (isEntregaTardia) {
+                trElement.classList.add('row-tardia', 'bg-orange-100', 'dark:bg-amber-950/40');
+            } else {
+                trElement.classList.add(rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-100/70', rowIndex % 2 === 0 ? 'dark:bg-slate-900' : 'dark:bg-slate-800/50');
+            }
+        }
+
+        function restoreCellContent(cellElement, rowObj, columnName, type, relTable) {
+            if (!rowObj) return;
+            const currentValue = rowObj[columnName];
+            
+            if (foreignKeyTables[columnName]) {
+                const rel = foreignKeyTables[columnName];
+                const matchedCat = (cacheForeignData[rel] || []).find(item => item.id == currentValue);
+                if (matchedCat) {
+                    cellElement.innerHTML = `<span class="w-full block text-center px-2 py-1 rounded text-[11px] font-medium text-white shadow-xs cursor-pointer" style="background-color: ${matchedCat.color};">${matchedCat.nombre}</span>`;
+                } else {
+                    cellElement.innerHTML = `<span class="text-slate-300 dark:text-slate-600 italic">Sin asignar</span>`;
+                }
+            } else if (columnName.includes('fecha')) {
+                cellElement.innerHTML = currentValue ? currentValue : '<span class="text-slate-300 dark:text-slate-600 italic">Fecha</span>';
+            } else {
+                cellElement.innerHTML = (currentValue !== null && currentValue !== undefined && currentValue !== '') ? currentValue : '<span class="text-slate-300 dark:text-slate-600 italic">Vacío</span>';
+            }
+        }
+
+        function exportToExcel() {
+            const dataset = currentTable === 'tareas' ? filteredTableData : currentTableData;
+            if (!dataset || dataset.length === 0) {
+                alert('No hay datos disponibles para exportar.');
+                return;
+            }
+
+            const columns = customColumnOrders[currentTable] || dbSchema[currentTable] || [];
+            const dataToExport = dataset.map(row => {
+                let cleanRow = {};
+                columns.forEach(col => {
+                    if (col === 'color' && currentTable !== 'tareas') return;
+                    if (currentTable === 'tareas' && (col === 'jerarquia' || col === 'apertura')) return;
+                    let val = row[col];
+                    if (currentTable === 'tareas' && foreignKeyTables[col]) {
+                        const relTable = foreignKeyTables[col];
+                        val = row[relTable] && row[relTable].nombre ? row[relTable].nombre : '';
+                    }
+                    cleanRow[col.replace('_', ' ')] = val !== null && val !== undefined ? val : '';
+                });
+                return cleanRow;
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, currentTable);
+            XLSX.writeFile(workbook, `${currentTable}_export.xlsx`);
+        }
+
+        async function openCreateModal() {
+            if (currentTable !== 'tareas') return;
+            document.getElementById('modal-title').innerText = `Nuevo Registro`;
+            const modal = document.getElementById('record-modal');
+            const fieldsContainer = document.getElementById('form-fields');
+            fieldsContainer.innerHTML = '<p class="text-xs text-slate-400 italic col-span-3 py-4 text-center"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Preparando formulario...</p>';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const columns = dbSchema[currentTable] || [];
+            fieldsContainer.innerHTML = '';
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            let lastActividadDefault = 1;
+            let lastEtapaDefault = 1;
+
+            if (currentTable === 'tareas' && currentTableData.length > 0) {
+                const sortedTasks = [...currentTableData].sort((a, b) => Number(b.id) - Number(a.id));
+                if (sortedTasks.length > 0) {
+                    if (sortedTasks[0].id_actividad) lastActividadDefault = sortedTasks[0].id_actividad;
+                    if (sortedTasks[0].id_etapa) lastEtapaDefault = sortedTasks[0].id_etapa;
+                }
+            }
+
+            let nameInputReference = null;
+
+            for (let col of columns) {
+                if (col === 'id') continue;
+                if (currentTable === 'tareas' && (col === 'jerarquia' || col === 'apertura')) continue;
+
+                const div = document.createElement('div');
+                div.className = 'flex flex-col gap-1';
+                
+                if (col === 'nombre' || col === 'observaciones') {
+                    div.className += ' md:col-span-2';
+                }
+
+                const label = document.createElement('label');
+                label.className = 'text-[11px] font-bold text-slate-700 dark:text-slate-300 capitalize';
+                label.innerText = col === 'orden' ? 'ord' : col.replace('_', ' ');
+
+                let defaultValue = '';
+                if (currentTable === 'tareas') {
+                    if (col === 'id_estado') defaultValue = 1;
+                    if (col === 'id_motivo') defaultValue = 1;
+                    if (col === 'id_situacion') defaultValue = 1;
+                    if (col === 'id_evaluacion') defaultValue = 1;
+                    if (col === 'id_actividad') defaultValue = lastActividadDefault;
+                    if (col === 'id_etapa') defaultValue = lastEtapaDefault;
+                    if (col === 'fecha_creada') defaultValue = todayStr;
+                }
+
+                if (foreignKeyTables[col]) {
+                    const targetTable = foreignKeyTables[col];
+                    const select = document.createElement('select');
+                    select.name = col;
+                    select.className = 'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#0083B0] transition';
+
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.innerText = `-- Seleccionar --`;
+                    select.appendChild(defaultOption);
+
+                    try {
+                        if (!cacheForeignData[targetTable]) {
+                            const { data, error } = await supabaseClient.from(targetTable).select('id, nombre, color');
+                            if (!error) {
+                                cacheForeignData[targetTable] = data || [];
+                            }
+                        }
+
+                        const relatedRecords = cacheForeignData[targetTable] || [];
+                        relatedRecords.forEach(record => {
+                            const opt = document.createElement('option');
+                            opt.value = record.id;
+                            opt.innerText = record.nombre;
+                            if (defaultValue !== '' && record.id == defaultValue) {
+                                opt.selected = true;
+                            }
+                            select.appendChild(opt);
+                        });
+                    } catch (e) {
+                        console.error(`Error cargando relaciones para ${col}:`, e);
+                    }
+
+                    if (col === 'id_usuario') {
+                        select.onchange = () => {
+                            if (nameInputReference) {
+                                nameInputReference.focus();
+                            }
+                        };
+                    }
+
+                    div.appendChild(label);
+                    div.appendChild(select);
+                } else {
+                    const input = document.createElement('input');
+                    input.type = col === 'color' ? 'color' : (col.includes('fecha') ? 'date' : ((col.includes('porcentaje') || col === 'orden') ? 'number' : 'text'));
+                    input.name = col;
+                    input.value = col === 'color' ? '#2A409C' : defaultValue;
+                    input.placeholder = `Ingresar ${col}...`;
+                    input.className = 'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#0083B0] transition';
+
+                    if (col === 'nombre') {
+                        nameInputReference = input;
+                    }
+
+                    div.appendChild(label);
+                    div.appendChild(input);
+                }
+
+                fieldsContainer.appendChild(div);
+            }
+
+            const form = document.getElementById('record-form');
+            form.onsubmit = saveNewRecord;
+        }
+
+        async function openEditModal(id) {
+            if (currentTable !== 'tareas') return;
+            const rowObj = currentTableData.find(r => r.id == id);
+            if (!rowObj) return;
+
+            const tareaNombre = rowObj.nombre ? rowObj.nombre : `ID: ${id}`;
+            document.getElementById('modal-title').innerText = `Editar Tarea: ${tareaNombre}`;
+            
+            const modal = document.getElementById('record-modal');
+            const fieldsContainer = document.getElementById('form-fields');
+            fieldsContainer.innerHTML = '<p class="text-xs text-slate-400 italic col-span-3 py-4 text-center"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Cargando datos de tarea...</p>';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const columns = dbSchema[currentTable] || [];
+            fieldsContainer.innerHTML = '';
+
+            for (let col of columns) {
+                if (col === 'id') continue;
+                if (currentTable === 'tareas' && (col === 'jerarquia' || col === 'apertura')) continue;
+
+                const div = document.createElement('div');
+                div.className = 'flex flex-col gap-1';
+                
+                if (col === 'nombre' || col === 'observaciones') {
+                    div.className += ' md:col-span-2';
+                }
+
+                const label = document.createElement('label');
+                label.className = 'text-[11px] font-bold text-slate-700 dark:text-slate-300 capitalize';
+                label.innerText = col === 'orden' ? 'ord' : col.replace('_', ' ');
+
+                const currentValue = rowObj[col] !== undefined && rowObj[col] !== null ? rowObj[col] : '';
+
+                if (foreignKeyTables[col]) {
+                    const targetTable = foreignKeyTables[col];
+                    const select = document.createElement('select');
+                    select.name = col;
+                    select.className = 'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#0083B0] transition';
+
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.innerText = `-- Seleccionar --`;
+                    select.appendChild(defaultOption);
+
+                    try {
+                        if (!cacheForeignData[targetTable]) {
+                            const { data } = await supabaseClient.from(targetTable).select('id, nombre, color');
+                            cacheForeignData[targetTable] = data || [];
+                        }
+
+                        const relatedRecords = cacheForeignData[targetTable] || [];
+                        relatedRecords.forEach(record => {
+                            const opt = document.createElement('option');
+                            opt.value = record.id;
+                            opt.innerText = record.nombre;
+                            if (record.id == currentValue) opt.selected = true;
+                            select.appendChild(opt);
+                        });
+                    } catch (e) {
+                        console.error(`Error cargando relaciones para ${col}:`, e);
+                    }
+
+                    div.appendChild(label);
+                    div.appendChild(select);
+                } else {
+                    const input = document.createElement('input');
+                    input.type = col === 'color' ? 'color' : (col.includes('fecha') ? 'date' : ((col.includes('porcentaje') || col === 'orden') ? 'number' : 'text'));
+                    input.name = col;
+                    input.value = currentValue;
+                    input.className = 'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#0083B0] transition';
+
+                    div.appendChild(label);
+                    div.appendChild(input);
+                }
+
+                fieldsContainer.appendChild(div);
+            }
+
+            const form = document.getElementById('record-form');
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                await updateRecordFromModal(id, e);
+            };
+        }
+
+        async function updateRecordFromModal(id, event) {
+            event.preventDefault();
+            const form = document.getElementById('record-form');
+            const formData = new FormData(form);
+            const dataPayload = {};
+
+            formData.forEach((value, key) => {
+                if (value.trim() !== '') {
+                    if (!isNaN(value) && value.trim() !== '' && key !== 'color') {
+                        dataPayload[key] = Number(value);
+                    } else {
+                        dataPayload[key] = value;
+                    }
+                } else {
+                    dataPayload[key] = null;
+                }
+            });
+
+            try {
+                const { error } = await supabaseClient
+                    .from(currentTable)
+                    .update(dataPayload)
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                closeModal();
+                loadTableData();
+                
+                form.onsubmit = saveNewRecord;
+            } catch (err) {
+                alert('Error al actualizar el registro: ' + err.message);
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('record-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            
+            const form = document.getElementById('record-form');
+            form.onsubmit = saveNewRecord;
+        }
+
+        async function saveNewRecord(event) {
+            event.preventDefault();
+            if (!supabaseClient || !currentTable) return;
+
+            const form = document.getElementById('record-form');
+            const formData = new FormData(form);
+            const dataPayload = {};
+
+            formData.forEach((value, key) => {
+                if (value.trim() !== '') {
+                    if (!isNaN(value) && value.trim() !== '' && key !== 'color') {
+                        dataPayload[key] = Number(value);
+                    } else {
+                        dataPayload[key] = value;
+                    }
+                } else {
+                    dataPayload[key] = null;
+                }
+            });
+
+            try {
+                const { error } = await supabaseClient
+                    .from(currentTable)
+                    .insert([dataPayload]);
+
+                if (error) throw error;
+
+                closeModal();
+                loadTableData();
+            } catch (err) {
+                alert('Error al guardar el registro: ' + err.message);
+            }
+        }
+
+        async function deleteRecord(id) {
+            if (currentTable !== 'tareas') return;
+            if (!confirm('¿Estás seguro de que deseas eliminar este registro?')) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from(currentTable)
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+                loadTableData();
+            } catch (err) {
+                alert('Error al eliminar: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
