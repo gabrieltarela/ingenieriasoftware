@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Educativa - Ingeniería del Software</title>
+    <!-- Estilos CSS embebidos con el mismo diseño -->
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary: #2A409C;
+            --accent: #0083B0;
+        }
+        .dark {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: var(--bg-primary); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; transition: background 0.2s, color 0.2s; }
+        
+        header { background-color: #2A409C; color: #ffffff; padding: 1.25rem 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .dark header { background-color: #0f172a; border-bottom: 1px solid #334155; }
+        
+        .container { max-width: 1000px; margin: auto; width: 100%; padding: 2rem 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2rem; }
+        
+        .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05); }
+        
+        .hero { text-align: center; padding: 2.5rem 1rem; }
+        .hero h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--primary); }
+        .dark .hero h2 { color: #60a5fa; }
+        .hero p { color: var(--text-muted); font-size: 0.9rem; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+
+        .grid-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+        
+        .menu-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.75rem; text-align: center; text-decoration: none; color: var(--text-main); box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .menu-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: var(--accent); }
+        
+        .icon-box { background: rgba(42, 64, 156, 0.1); color: #2A409C; width: 60px; height: 60px; border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; transition: background 0.2s, color 0.2s; }
+        .dark .icon-box { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+        
+        .menu-card h3 { font-size: 1rem; font-weight: 700; }
+        .menu-card p { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; }
+
+        button, .btn { cursor: pointer; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; padding: 0.5rem 0.875rem; border: 1px solid var(--border-color); transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-secondary { background-color: #1e3175; color: #fff; border: none; }
+        .dark .btn-secondary { background-color: #334155; }
+        
+        .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .flex-center { display: flex; align-items: center; gap: 0.75rem; }
+        
+        footer { text-align: center; padding: 1.5rem; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border-color); }
+    </style>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="flex-between" style="max-width: 1280px; margin: 0 auto;">
+            <div class="flex-center">
+                <div style="background: rgba(255,255,255,0.15); padding: 0.6rem; border-radius: 0.75rem;">
+                    <i class="fa-solid fa-graduation-cap" style="font-size: 1.25rem;"></i>
+                </div>
+                <div>
+                    <h1 style="font-size: 1.1rem; font-weight: 700;">Plataforma Educativa</h1>
+                    <p style="font-size: 0.75rem; opacity: 0.8;">Ingeniería del Software - Panel Principal</p>
+                </div>
+            </div>
+            <div class="flex-center">
+                <button onclick="toggleDarkMode()" class="btn btn-secondary" title="Modo Oscuro">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i> <span id="theme-text">Modo Oscuro</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal -->
+    <div class="container">
+        
+        <!-- Tarjeta de Bienvenida / Hero -->
+        <div class="card hero">
+            <h2>Sistema de Gestión de Proyectos</h2>
+            <p>Seleccione una de las opciones disponibles para consultar la trazabilidad del desarrollo, auditar métricas analíticas o supervisar la planificación temporal del proyecto educativo.</p>
+        </div>
+
+        <!-- Menú de Opciones Principales -->
+        <div class="grid-menu">
+            <!-- Ingresar a las Tareas -->
+            <a href="tareasreadonly.html" class="menu-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-table-list"></i>
+                </div>
+                <div>
+                    <h3>Ingresar a las Tareas</h3>
+                    <p>Visualiza el backlog, el estado actual de los requerimientos y el avance de las actividades del proyecto.</p>
+                </div>
+            </a>
+
+            <!-- Panel de Estadísticas -->
+            <a href="dashboard.html" class="menu-card">
+                <div class="icon-box" style="color: #0083B0; background: rgba(0, 131, 176, 0.1);">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div>
+                    <h3>Panel de Estadísticas</h3>
+                    <p>Audita las métricas ágiles, la carga de trabajo por desarrollador, la puntualidad y los cuellos de botella.</p>
+                </div>
+            </a>
+
+            <!-- Gantt del Proyecto -->
+            <a href="gantt.html" class="menu-card">
+                <div class="icon-box" style="color: #059669; background: rgba(5, 150, 105, 0.1);">
+                    <i class="fa-solid fa-chart-gantt"></i>
+                </div>
+                <div>
+                    <h3>Gantt del Proyecto</h3>
+                    <p>Consulta la carta Gantt interactiva con la planificación cronológica, fases y plazos del ciclo de desarrollo.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Nota informativa inferior -->
+        <div class="card" style="background: rgba(42, 64, 156, 0.05); border-color: rgba(42, 64, 156, 0.15); display: flex; align-items: center; gap: 1rem;">
+            <i class="fa-solid fa-circle-info" style="font-size: 1.25rem; color: #2A409C;"></i>
+            <p style="font-size: 0.75rem; line-height: 1.4;">Este portal centraliza los artefactos de control y seguimiento académico-técnico correspondientes a la propuesta de ingeniería del software.</p>
+        </div>
+
+    </div>
+
+    <!-- Pie de página -->
+    <footer>
+        <p>Ingeniería del Software &bull; Plataforma Educativa &copy; 2026</p>
+    </footer>
+
+    <!-- Script de Lógica para el Tema -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+        });
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                updateThemeUI(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateThemeUI(false);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeUI(isDark);
+        }
+
+        function updateThemeUI(isDark) {
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+            if (isDark) {
+                icon.className = 'fa-solid fa-sun';
+                if (text) text.innerText = 'Modo Claro';
+            } else {
+                icon.className = 'fa-solid fa-moon';
+                if (text) text.innerText = 'Modo Oscuro';
+            }
+        }
+    </script>
+</body>
+</html>
