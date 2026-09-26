@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ing. del Software: Gestion de Tareas.</title>
+    <!-- Tailwind CSS (CDN Estándar) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS (xlsx) para la exportación a Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { background-color: #2c4978 !important; }
+
+        /* Contenedor de desplazamiento con barras vertical y horizontal */
+        .scroll-container {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        /* Altura de filas ajustable y sincronizada globalmente */
+        .sync-row {
+            height: 55px;
+            overflow: hidden;
+        }
+
+        /* Cabecera fija verticalmente */
+        #data-table th {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background-color: #3F6092 !important;
+            color: #ffffff !important;
+        }
+
+        /* Clases base para columnas fijas horizontales (Sticky) */
+        .sticky-col-0    { position: sticky; left: 0px; z-index: 35; width: 70px; min-width: 70px; max-width: 90px; }
+        .sticky-col-1    { position: sticky; left: 70px; z-index: 35; width: 240px; min-width: 100px; box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1); }
+        
+        /* Light mode sticky backgrounds */
+        html:not(.dark) tr.bg-white .sticky-sticky-bg { background-color: #ffffff; }
+        html:not(.dark) tr.bg-slate-100\/70 .sticky-sticky-bg { background-color: #f1f5f9; }
+        html:not(.dark) tr.row-vencida .sticky-sticky-bg { background-color: #fee2e2 !important; }
+        html:not(.dark) tr.row-tardia .sticky-sticky-bg { background-color: #ffedd5 !important; }
+
+        /* Dark mode sticky backgrounds */
+        html.dark tr.bg-slate-900 .sticky-sticky-bg { background-color: #0f172a; }
+        html.dark tr.bg-slate-800\/50 .sticky-sticky-bg { background-color: #1e293b; }
+        html.dark tr.row-vencida .sticky-sticky-bg { background-color: #7f1d1d !important; }
+        html.dark tr.row-tardia .sticky-sticky-bg { background-color: #7c2d12 !important; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Header con color #3F6092 -->
+    <header class="bg-[#3F6092] dark:bg-slate-900 dark:border-b dark:border-slate-800 text-white shadow-md">
+        <div class="w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <div class="flex flex-wrap items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+                <h1 class="text-xl font-bold tracking-tight">Ing. del Software: Gestion de Tareas.</h1>
+                <div class="flex items-center gap-2">
+                    <button id="btn-refresh" onclick="loadTableData()" class="bg-[#2c4978] hover:bg-[#20375c] dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs border border-blue-800 dark:border-slate-700">
+                        <i class="fa-solid fa-rotate"></i> Actualizar
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <button onclick="toggleDarkMode()" class="bg-[#2c4978] hover:bg-[#20375c] dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-100 border border-blue-700 dark:border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-xs" title="Cambiar modo claro / oscuro">
+                    <i id="theme-icon" class="fa-solid fa-moon text-blue-300"></i> <span id="theme-text" class="hidden sm:inline">Modo Oscuro</span>
+                </button>
+
+                <button onclick="exportToExcel()" class="bg-[#2c4978] hover:bg-[#20375c] dark:bg-slate-800 dark:hover:bg-slate-700 text-blue-100 border border-blue-700 dark:border-slate-700 px-3.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-xs" title="Exportar datos actuales a XLSX">
+                    <i class="fa-solid fa-file-excel text-blue-300"></i> Exportar XLSX
+                </button>
+
+                <div class="flex items-center gap-2 text-xs bg-[#2c4978] dark:bg-slate-800 text-blue-200 dark:text-slate-300 px-3.5 py-2 rounded-full border border-blue-800 dark:border-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                    <span>Conectado</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full px-6 py-6 flex-1 flex flex-col gap-6">
+        
+        <section class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-6 flex-1 overflow-hidden transition-colors">
+            
+            <div id="wrapper-filters" class="flex flex-col gap-2">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <button onclick="toggleFiltersPanel()" class="text-xs font-semibold text-[#3F6092] dark:text-blue-400 hover:text-[#2c4978] flex items-center gap-1.5 cursor-pointer">
+                        <i id="filter-toggle-icon" class="fa-solid fa-chevron-down text-[10px]"></i> 
+                        <span id="filter-toggle-text">Ocultar filtros de búsqueda</span>
+                    </button>
+
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                        <div class="relative flex-1 md:w-64">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 pointer-events-none">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="input-buscar-nombre" oninput="applyFilters()" placeholder="Buscar por nombre..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0] focus:bg-white dark:focus:bg-slate-900 transition">
+                        </div>
+                        <button onclick="applyFilters()" class="bg-[#0083B0] hover:bg-[#006e94] text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0">
+                            Buscar
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                            <input type="checkbox" id="check-mostrar-agendadas" onchange="applyFilters()" class="rounded border-slate-300 dark:border-slate-700 text-[#0083B0] focus:ring-[#0083B0] w-4 h-4 cursor-pointer bg-transparent">
+                            Mostrar Agendadas
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                            <input type="checkbox" id="check-top-scrollbar" onchange="toggleTopScrollbar(this)" class="rounded border-slate-300 dark:border-slate-700 text-[#0083B0] focus:ring-[#0083B0] w-4 h-4 cursor-pointer bg-transparent">
+                            Scroll Bar Superior
+                        </label>
+                    </div>
+                </div>
+
+                <div id="filters-container" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-xl flex flex-wrap items-end gap-3 transition-all duration-300">
+                    <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+                        <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400">Estado</label>
+                        <select id="filter-estado" onchange="applyFilters()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0]">
+                            <option value="">Todos los estados</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+                        <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400">Usuario</label>
+                        <select id="filter-usuario" onchange="applyFilters()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0]">
+                            <option value="">Todos los usuarios</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro Cumplimiento -->
+                    <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+                        <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400">Cumplimiento</label>
+                        <select id="filter-cumplimiento" onchange="applyFilters()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0083B0]">
+                            <option value="">Todos</option>
+                            <option value="atrasadas">Atrasadas</option>
+                            <option value="abiertas">Abiertas</option>
+                            <option value="en_plazo">En Plazo</option>
+                            <option value="working">Working...</option>
+                            <option value="sin_fecha_entrega">Sin Fecha de Entrega</option>
+                            <option value="entregas_tardias">Entregas Tardías</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-end">
+                        <button onclick="clearFilters()" class="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer h-[30px]" title="Limpiar filtros">
+                            <i class="fa-solid fa-filter-circle-xmark"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Estadísticas Interactivas -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div onclick="filterByStat('')" class="bg-blue-50 dark:bg-slate-900/60 border border-blue-200 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center shadow-xs cursor-pointer hover:bg-blue-100 dark:hover:bg-slate-800 transition" title="Ver todas">
+                    <span class="text-[11px] font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide">Total</span>
+                    <span id="stat-total" class="text-lg font-extrabold text-blue-900 dark:text-blue-100">0</span>
+                </div>
+                <div onclick="filterByStat('abiertas')" class="bg-emerald-50 dark:bg-slate-900/60 border border-emerald-200 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center shadow-xs cursor-pointer hover:bg-emerald-100 dark:hover:bg-slate-800 transition" title="Filtrar Abiertas">
+                    <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">Abiertas</span>
+                    <span id="stat-abiertas" class="text-lg font-extrabold text-emerald-900 dark:text-emerald-100">0</span>
+                </div>
+                <div onclick="filterByStat('atrasadas')" class="bg-rose-50 dark:bg-slate-900/60 border border-rose-200 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center shadow-xs cursor-pointer hover:bg-rose-100 dark:hover:bg-slate-800 transition" title="Filtrar Atrasadas">
+                    <span class="text-[11px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wide">Atrasadas</span>
+                    <span id="stat-atrasadas" class="text-lg font-extrabold text-rose-900 dark:text-rose-100">0</span>
+                </div>
+                <div onclick="filterByStat('working')" class="bg-sky-50 dark:bg-slate-900/60 border border-sky-200 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center shadow-xs cursor-pointer hover:bg-sky-100 dark:hover:bg-slate-800 transition" title="Filtrar Working">
+                    <span class="text-[11px] font-bold text-sky-700 dark:text-sky-300 uppercase tracking-wide">Working</span>
+                    <span id="stat-working" class="text-lg font-extrabold text-sky-900 dark:text-sky-100">0</span>
+                </div>
+                <div onclick="filterByStat('entregas_tardias')" class="bg-amber-50 dark:bg-slate-900/60 border border-amber-200 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center shadow-xs cursor-pointer hover:bg-amber-100 dark:hover:bg-slate-800 transition" title="Filtrar Tardías">
+                    <span class="text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Tardías</span>
+                    <span id="stat-tardias" class="text-lg font-extrabold text-amber-900 dark:text-amber-100">0</span>
+                </div>
+                <div onclick="filterByStat('sin_fecha_entrega')" class="bg-purple-50 dark:bg-slate-900/60 border border-purple-200 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center shadow-xs cursor-pointer hover:bg-purple-100 dark:hover:bg-slate-800 transition" title="Filtrar Sin Plazo">
+                    <span class="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide">Sin Plazo</span>
+                    <span id="stat-sin-plazo" class="text-lg font-extrabold text-purple-900 dark:text-purple-100">0</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col flex-1 border border-slate-100 dark:border-slate-700 rounded-lg overflow-hidden">
+                <div id="top-scrollbar" class="overflow-x-auto bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 hidden" onscroll="syncScroll('top')">
+                    <div id="top-scrollbar-content" class="h-2"></div>
+                </div>
+
+                <div id="bottom-scrollbar" class="scroll-container bg-white dark:bg-slate-900" onscroll="syncScroll('bottom')">
+                    <table id="data-table" class="w-full text-left border-collapse min-w-[1100px]" style="table-layout: fixed;">
+                        <thead id="table-head" class="text-xs uppercase font-semibold border-b border-slate-800 dark:border-slate-700">
+                            <tr>
+                                <th class="p-3 text-center" style="background-color: #3F6092; color: #ffffff;">Cargando datos...</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-200">
+                            <tr>
+                                <td class="p-8 text-center text-slate-400 italic">Cargando registros de Supabase...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pie de tabla con total de filas cargadas -->
+            <div class="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 px-1">
+                <div><i class="fa-solid fa-list-check mr-1"></i> Total de filas mostradas: <strong id="row-count-footer" class="text-slate-700 dark:text-slate-200">0</strong></div>
+                <p id="table-instructions" class="italic"><i class="fa-solid fa-bolt mr-1"></i> Haz un clic para seleccionar una fila.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Script de Lógica (Modo Solo Lectura) -->
+    <script>
+        const SUPABASE_URL = "https://pefmjjtmnhawtqjwmkme.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_ptwqt2I3mu9WTfB2Zz6hOg__WoACVSE";
+
+        const defaultTareasOrder = [
+            'orden', 'nombre', 'id_usuario', 'id_estado', 'fecha_asignada', 
+            'fecha_vencimiento', 'fecha_entregada', 'id_evaluacion', 
+            'id_motivo', 'porcentaje_avance', 'observaciones', 
+            'id_situacion', 'id_predecesor', 
+            'fecha_creada', 'id_actividad', 'id_etapa'
+        ];
+
+        const dbSchema = {
+            tareas: ['id', ...defaultTareasOrder]
+        };
+
+        const foreignKeyTables = {
+            'id_etapa': 'etapas',
+            'id_jerarquia': 'jerarquia',
+            'id_estado': 'estados',
+            'id_situacion': 'situaciones',
+            'id_usuario': 'usuarios',
+            'id_evaluacion': 'evaluaciones',
+            'id_actividad': 'actividad',
+            'id_motivo': 'motivos'
+        };
+
+        let supabaseClient = null;
+        let currentTable = 'tareas';
+        let currentTableData = [];
+        let filteredTableData = [];
+        let cacheForeignData = {};
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        let globalRowHeight = 55; 
+
+        let customColumnOrders = {
+            tareas: [...defaultTareasOrder]
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                populateFilterDropdowns();
+                selectTable('tareas');
+            } catch (err) {
+                alert('Error al inicializar la conexión con Supabase: ' + err.message);
+            }
+        });
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                updateThemeUI(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateThemeUI(false);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeUI(isDark);
+        }
+
+        function updateThemeUI(isDark) {
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+            if (isDark) {
+                icon.className = 'fa-solid fa-sun text-yellow-300';
+                if (text) text.innerText = 'Modo Claro';
+            } else {
+                icon.className = 'fa-solid fa-moon text-blue-300';
+                if (text) text.innerText = 'Modo Oscuro';
+            }
+        }
+
+        function syncScroll(source) {
+            const topBar = document.getElementById('top-scrollbar');
+            const bottomBar = document.getElementById('bottom-scrollbar');
+            if (source === 'top') {
+                bottomBar.scrollLeft = topBar.scrollLeft;
+            } else {
+                topBar.scrollLeft = bottomBar.scrollLeft;
+            }
+        }
+
+        function updateScrollbarsWidth() {
+            const table = document.getElementById('data-table');
+            const topContent = document.getElementById('top-scrollbar-content');
+            if (table && topContent) {
+                topContent.style.width = table.scrollWidth + 'px';
+            }
+        }
+
+        function toggleTopScrollbar(checkbox) {
+            const topBar = document.getElementById('top-scrollbar');
+            if (checkbox.checked) {
+                topBar.classList.remove('hidden');
+                updateScrollbarsWidth();
+            } else {
+                topBar.classList.add('hidden');
+            }
+        }
+
+        function toggleFiltersPanel() {
+            const container = document.getElementById('filters-container');
+            const icon = document.getElementById('filter-toggle-icon');
+            const text = document.getElementById('filter-toggle-text');
+            
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                container.classList.add('flex');
+                icon.className = 'fa-solid fa-chevron-down text-[10px]';
+                text.innerText = 'Ocultar filtros de búsqueda';
+            } else {
+                container.classList.remove('flex');
+                container.classList.add('hidden');
+                icon.className = 'fa-solid fa-chevron-right text-[10px]';
+                text.innerText = 'Mostrar filtros de búsqueda';
+            }
+        }
+
+        async function populateFilterDropdowns() {
+            try {
+                await loadCatalogIntoSelect('estados', 'filter-estado');
+                await loadCatalogIntoSelect('usuarios', 'filter-usuario');
+            } catch (e) {
+                console.error("Error al poblar filtros:", e);
+            }
+        }
+
+        async function loadCatalogIntoSelect(tableName, selectId) {
+            const select = document.getElementById(selectId);
+            if (!cacheForeignData[tableName]) {
+                const { data, error } = await supabaseClient.from(tableName).select('id, nombre, color');
+                if (!error) {
+                    cacheForeignData[tableName] = data || [];
+                }
+            }
+            const records = cacheForeignData[tableName] || [];
+            records.forEach(rec => {
+                const opt = document.createElement('option');
+                opt.value = rec.id;
+                opt.innerText = rec.nombre;
+                select.appendChild(opt);
+            });
+        }
+
+        async function selectTable(tableName) {
+            currentTable = tableName;
+            sortColumn = 'orden';
+            sortDirection = 'asc';
+
+            if (!customColumnOrders[currentTable]) {
+                customColumnOrders[currentTable] = [...(dbSchema[currentTable] || [])].filter(c => c !== 'id');
+            }
+
+            await loadTableData();
+        }
+
+        async function loadTableData() {
+            if (!supabaseClient || !currentTable) return;
+
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '<tr><td colspan="100" class="p-8 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando registros...</td></tr>';
+
+            try {
+                let query = supabaseClient.from('tareas').select(`
+                    id, orden, nombre, observaciones, porcentaje_avance,
+                    fecha_creada, fecha_asignada, fecha_vencimiento, fecha_entregada, id_predecesor,
+                    id_etapa, id_estado, id_situacion, id_usuario, id_evaluacion, id_actividad, id_motivo,
+                    etapas:id_etapa(nombre, color),
+                    estados:id_estado(nombre, color),
+                    situaciones:id_situacion(nombre, color),
+                    usuarios:id_usuario(nombre, color),
+                    evaluaciones:id_evaluacion(nombre, color),
+                    actividad:id_actividad(nombre, color),
+                    motivos:id_motivo(nombre, color)
+                `);
+
+                // Verificar si viene un parámetro 'id' en la URL para filtrar específicamente esa tarea
+                const urlParams = new URLSearchParams(window.location.search);
+                const taskIdParam = urlParams.get('id');
+                if (taskIdParam) {
+                    query = query.eq('id', taskIdParam);
+                }
+
+                const { data, error } = await query.limit(100);
+                if (error) throw error;
+                currentTableData = data || [];
+                filteredTableData = [...currentTableData];
+
+                if (!sortColumn) {
+                    sortColumn = 'orden';
+                    sortDirection = 'asc';
+                }
+                applyFilters();
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="100" class="p-6 text-center text-rose-500 bg-rose-50 dark:bg-rose-950/50 rounded">Error al cargar datos: ${err.message}</td></tr>`;
+            }
+        }
+
+        function filterByStat(statType) {
+            document.getElementById('filter-cumplimiento').value = statType;
+            applyFilters();
+        }
+
+        function updateStatistics(baseDataset) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            
+            let total = baseDataset.length;
+            let abiertas = 0;
+            let atrasadas = 0;
+            let working = 0;
+            let tardias = 0;
+            let sinPlazo = 0;
+
+            baseDataset.forEach(row => {
+                const estadoNombre = (row.estados && row.estados.nombre) ? row.estados.nombre.toLowerCase() : '';
+                const esAgendada = Number(row.id_estado) === 8 || estadoNombre.includes('agendad');
+                const fVenc = row.fecha_vencimiento;
+                const fEnt = row.fecha_entregada;
+
+                const esArchivada = Number(row.id_estado) === 7 || estadoNombre.includes('archivad');
+                const esCerrada = estadoNombre.includes('cerrada');
+                const esFinalizada = estadoNombre.includes('finalizad');
+                if (!esArchivada && !esCerrada && !esFinalizada) {
+                    abiertas++;
+                }
+
+                if (fVenc && fVenc < todayStr && !fEnt) {
+                    atrasadas++;
+                }
+
+                if (!fEnt && fVenc && fVenc >= todayStr && !esAgendada) {
+                    working++;
+                }
+
+                if (fEnt && fVenc && fEnt > fVenc) {
+                    tardias++;
+                }
+
+                if (!fVenc) {
+                    sinPlazo++;
+                }
+            });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-abiertas').innerText = abiertas;
+            document.getElementById('stat-atrasadas').innerText = atrasadas;
+            document.getElementById('stat-working').innerText = working;
+            document.getElementById('stat-tardias').innerText = tardias;
+            document.getElementById('stat-sin-plazo').innerText = sinPlazo;
+            
+            document.getElementById('row-count-footer').innerText = filteredTableData.length;
+        }
+
+        function applyFilters() {
+            if (currentTable !== 'tareas') return;
+
+            const estadoVal = document.getElementById('filter-estado').value;
+            const usuarioVal = document.getElementById('filter-usuario').value;
+            const cumplimientoVal = document.getElementById('filter-cumplimiento').value;
+            const mostrarAgendadas = document.getElementById('check-mostrar-agendadas').checked;
+            const textBuscar = document.getElementById('input-buscar-nombre').value.toLowerCase().trim();
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            filteredTableData = currentTableData.filter(row => {
+                const estadoNombre = (row.estados && row.estados.nombre) ? row.estados.nombre.toLowerCase() : '';
+                const esAgendada = Number(row.id_estado) === 8 || estadoNombre.includes('agendad');
+
+                if (!mostrarAgendadas && esAgendada) return false;
+                if (estadoVal && String(row.id_estado) !== estadoVal) return false;
+                if (usuarioVal && String(row.id_usuario) !== usuarioVal) return false;
+                
+                if (textBuscar) {
+                    const nombreRow = row.nombre ? String(row.nombre).toLowerCase() : '';
+                    if (!nombreRow.includes(textBuscar)) return false;
+                }
+
+                if (cumplimientoVal) {
+                    const fAsig = row.fecha_asignada;
+                    const fVenc = row.fecha_vencimiento;
+                    const fEnt = row.fecha_entregada;
+
+                    if (cumplimientoVal === 'atrasadas') {
+                        if (!(fVenc && fVenc < todayStr && !fEnt)) return false;
+                    } else if (cumplimientoVal === 'abiertas') {
+                        const esArchivada = Number(row.id_estado) === 7 || estadoNombre.includes('archivad');
+                        const esCerrada = estadoNombre.includes('cerrada');
+                        const esFinalizada = estadoNombre.includes('finalizad');
+                        if (esArchivada || esCerrada || esFinalizada) return false;
+                    } else if (cumplimientoVal === 'en_plazo') {
+                        if (!fAsig || !fVenc || !fEnt || !(fEnt >= fAsig && fEnt <= fVenc)) return false;
+                    } else if (cumplimientoVal === 'working') {
+                        if (fEnt || !fVenc || fVenc < todayStr || esAgendada) return false;
+                    } else if (cumplimientoVal === 'sin_fecha_entrega') {
+                        if (fEnt) return false;
+                    } else if (cumplimientoVal === 'entregas_tardias') {
+                        if (!fEnt || !fVenc || fEnt <= fVenc) return false;
+                    }
+                }
+
+                return true;
+            });
+
+            updateStatistics(currentTableData);
+            sortAndRender();
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-estado').value = '';
+            document.getElementById('filter-usuario').value = '';
+            document.getElementById('filter-cumplimiento').value = '';
+            document.getElementById('check-mostrar-agendadas').checked = false;
+            document.getElementById('input-buscar-nombre').value = '';
+            applyFilters();
+        }
+
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            sortAndRender();
+        }
+
+        function sortAndRender() {
+            if (sortColumn) {
+                filteredTableData.sort((a, b) => {
+                    let valA = a[sortColumn];
+                    let valB = b[sortColumn];
+
+                    if (foreignKeyTables[sortColumn]) {
+                        const rel = foreignKeyTables[sortColumn];
+                        valA = a[rel]?.nombre || '';
+                        valB = b[rel]?.nombre || '';
+                    }
+
+                    if (valA === null || valA === undefined) valA = '';
+                    if (valB === null || valB === undefined) valB = '';
+
+                    if (sortColumn === 'id' || sortColumn === 'orden') {
+                        valA = Number(valA) || 0;
+                        valB = Number(valB) || 0;
+                    } else if (typeof valA === 'string') {
+                        valA = valA.toLowerCase();
+                        valB = valB.toLowerCase();
+                    }
+
+                    if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            renderTableContent();
+        }
+
+        function handleRowClick(trElement) {
+            document.querySelectorAll('#data-table tbody tr').forEach(tr => {
+                tr.classList.remove('row-selected');
+            });
+            trElement.classList.add('row-selected');
+        }
+
+        function updateStickyPositions() {
+            const th0 = document.querySelector('.sticky-col-0');
+            const th1 = document.querySelector('.sticky-col-1');
+
+            let left0 = 0;
+            let left1 = left0 + (th0 ? th0.offsetWidth : 70);
+
+            if (th0) th0.style.left = left0 + 'px';
+            if (th1) th1.style.left = left1 + 'px';
+
+            document.querySelectorAll('#data-table tbody tr').forEach(tr => {
+                const td0 = tr.querySelector('.sticky-col-0');
+                const td1 = tr.querySelector('.sticky-col-1');
+
+                if (td0) td0.style.left = left0 + 'px';
+                if (td1) td1.style.left = left1 + 'px';
+            });
+        }
+
+        function renderTableContent() {
+            const thead = document.getElementById('table-head');
+            const tbody = document.getElementById('table-body');
+            const columns = customColumnOrders[currentTable] || dbSchema[currentTable] || [];
+            const dataset = filteredTableData;
+
+            let headHtml = '<tr>';
+            
+            headHtml += `<th class="p-3 font-semibold capitalize sortable sticky-col-0" style="background-color: #3F6092; color: #ffffff; z-index: 40;" onclick="sortTable('orden')">ord${sortColumn === 'orden' ? (sortDirection === 'asc' ? ' <i class="fa-solid fa-arrow-up text-[10px]"></i>' : ' <i class="fa-solid fa-arrow-down text-[10px]"></i>') : ''}</th>`;
+            headHtml += `<th class="p-3 font-semibold capitalize sortable sticky-col-1" style="background-color: #3F6092; color: #ffffff; z-index: 40;" onclick="sortTable('nombre')">Nombre</th>`;
+
+            columns.forEach((col) => {
+                if (col === 'id' || col === 'orden' || col === 'nombre') return;
+                if (col === 'jerarquia' || col === 'apertura') return;
+                
+                let colTitle = col;
+                if (foreignKeyTables[col]) {
+                    colTitle = foreignKeyTables[col];
+                }
+                const isWide = ['fecha_asignada', 'fecha_vencimiento', 'fecha_entregada', 'id_evaluacion', 'id_motivo'].includes(col);
+                const widthStyle = isWide ? 'width: 140px; min-width: 140px;' : 'width: 120px; min-width: 100px;';
+                const sortIcon = sortColumn === col ? (sortDirection === 'asc' ? ' <i class="fa-solid fa-arrow-up text-[10px]"></i>' : ' <i class="fa-solid fa-arrow-down text-[10px]"></i>') : '';
+                
+                headHtml += `<th class="p-3 font-semibold capitalize sortable" style="background-color: #3F6092; color: #ffffff; ${widthStyle}" onclick="sortTable('${col}')">${colTitle.replace('_', ' ')}${sortIcon}</th>`;
+            });
+            headHtml += '</tr>';
+            thead.innerHTML = headHtml;
+
+            document.getElementById('row-count-footer').innerText = dataset.length;
+
+            if (dataset.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${columns.length}" class="p-8 text-center text-slate-400 italic">No se encontraron registros.</td></tr>`;
+                updateScrollbarsWidth();
+                return;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            let bodyHtml = '';
+            dataset.forEach((row, rowIndex) => {
+                const recordId = row.id;
+
+                const fVenc = row.fecha_vencimiento;
+                const fEnt = row.fecha_entregada;
+                let rowColorClass = rowIndex % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-100/70 dark:bg-slate-800/50';
+
+                const isVencidaSinEntrega = fVenc && fVenc < todayStr && !fEnt;
+                const isEntregaTardia = fEnt && fVenc && fEnt > fVenc;
+
+                if (isVencidaSinEntrega) {
+                    rowColorClass = 'row-vencida bg-red-100 dark:bg-red-950/40';
+                } else if (isEntregaTardia) {
+                    rowColorClass = 'row-tardia bg-orange-100 dark:bg-amber-950/40';
+                }
+
+                bodyHtml += `<tr id="row-${recordId}" class="sync-row ${rowColorClass} hover:opacity-90 transition" style="height: ${globalRowHeight}px;" onclick="handleRowClick(this)">`;
+                
+                const ordenVal = row['orden'] !== null && row['orden'] !== undefined ? row['orden'] : '';
+                bodyHtml += `<td class="p-2 sticky-col-0 sticky-sticky-bg text-center text-[11px] font-medium h-full align-middle">
+                    ${ordenVal !== '' ? ordenVal : '<span class="text-slate-300 dark:text-slate-600 italic">-</span>'}
+                </td>`;
+
+                const nVal = row['nombre'] !== null && row['nombre'] !== undefined ? row['nombre'] : '';
+                bodyHtml += `<td class="p-2 sticky-col-1 sticky-sticky-bg font-medium h-full align-middle truncate">
+                    ${nVal !== '' ? nVal : '<span class="text-slate-300 dark:text-slate-600 italic">Vacío</span>'}
+                </td>`;
+
+                columns.forEach(col => {
+                    if (col === 'id' || col === 'orden' || col === 'nombre') return;
+                    if (col === 'jerarquia' || col === 'apertura') return;
+
+                    let val = row[col];
+
+                    if (foreignKeyTables[col]) {
+                        const relTable = foreignKeyTables[col];
+                        const relName = row[relTable] && row[relTable].nombre ? row[relTable].nombre : 'Sin asignar';
+                        const relColor = row[relTable] && row[relTable].color ? row[relTable].color : '#64748b';
+                        
+                        bodyHtml += `<td class="p-2 h-full align-middle">
+                            <span class="w-full block text-center px-2 py-1 rounded text-[11px] font-medium text-white shadow-xs" style="background-color: ${relColor};">${relName}</span>
+                        </td>`;
+                    } else if (col.includes('fecha')) {
+                        const dateVal = val || '';
+                        bodyHtml += `<td class="p-2 h-full align-middle text-[11px]">
+                            ${dateVal ? dateVal : '<span class="text-slate-300 dark:text-slate-600 italic">Fecha</span>'}
+                        </td>`;
+                    } else {
+                        const displayVal = (val !== null && val !== undefined) ? val : '';
+                        bodyHtml += `<td class="p-2 truncate h-full align-middle">
+                            ${displayVal !== '' ? displayVal : '<span class="text-slate-300 dark:text-slate-600 italic">Vacío</span>'}
+                        </td>`;
+                    }
+                });
+                
+                bodyHtml += '</tr>';
+            });
+            tbody.innerHTML = bodyHtml;
+            
+            updateStickyPositions();
+            setTimeout(updateScrollbarsWidth, 50);
+        }
+
+        function exportToExcel() {
+            const dataset = filteredTableData;
+            if (!dataset || dataset.length === 0) {
+                alert('No hay datos disponibles para exportar.');
+                return;
+            }
+
+            const columns = customColumnOrders[currentTable] || dbSchema[currentTable] || [];
+            const dataToExport = dataset.map(row => {
+                let cleanRow = {};
+                columns.forEach(col => {
+                    if (col === 'jerarquia' || col === 'apertura') return;
+                    let val = row[col];
+                    if (foreignKeyTables[col]) {
+                        const relTable = foreignKeyTables[col];
+                        val = row[relTable] && row[relTable].nombre ? row[relTable].nombre : '';
+                    }
+                    cleanRow[col.replace('_', ' ')] = val !== null && val !== undefined ? val : '';
+                });
+                return cleanRow;
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, currentTable);
+            XLSX.writeFile(workbook, `${currentTable}_export_solo_lectura.xlsx`);
+        }
+    </script>
+</body>
+</html>
