@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Índice de Prototipos | Plataforma ANEP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --anep-blue: #0056b3;
+      --anep-dark-blue: #003366;
+      --anep-light-bg: #f4f6f8;
+      --crea-border: #dee2e6;
+    }
+
+    body {
+      background-color: var(--anep-light-bg);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+      padding-bottom: 40px;
+    }
+
+    /* Navbar principal estilo CREA/ANEP */
+    .navbar-anep {
+      background-color: #ffffff;
+      border-bottom: 2px solid var(--anep-blue);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 6px 16px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+      color: var(--anep-blue);
+      text-decoration: none;
+      font-size: 1.25rem;
+    }
+
+    .brand-badge {
+      background-color: #0080ff;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    /* Cabecera del índice */
+    .index-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--crea-border);
+      padding: 25px 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* V-Cards Alargadas (Menú Vertical) */
+    .vcard-menu-item {
+      background: white;
+      border: 1px solid var(--crea-border);
+      border-left: 5px solid var(--anep-blue);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-decoration: none;
+      color: #333;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .vcard-menu-item:hover {
+      background-color: #f8f9fa;
+      border-color: var(--anep-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+      color: var(--anep-blue);
+    }
+
+    .vcard-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 2px;
+    }
+
+    .vcard-desc {
+      font-size: 0.82rem;
+      color: #6c757d;
+      margin-bottom: 0;
+    }
+
+    .priority-badge {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra Superior ANEP / CREA -->
+  <nav class="navbar navbar-expand-lg navbar-anep">
+    <div class="container-fluid">
+      <a class="brand-logo" href="#">
+        <span class="brand-badge">PANEP</span>
+        <span style="font-size: 1rem; color: #003366;">ANEP</span>
+      </a>
+      <div class="d-flex align-items-center gap-2">
+        <span class="small text-muted">Prototipo Interactivo - Presentación Cliente</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Cabecera -->
+  <div class="index-header">
+    <div class="container">
+      <h1 class="fw-bold text-dark fs-3 mb-1">Índice de Pantallas del Prototipo</h1>
+      <p class="text-muted small mb-0">Seleccione una ventana para abrir su respectiva simulación interactiva con el diseño de la plataforma CREA.</p>
+    </div>
+  </div>
+
+  <!-- Contenedor del Menú Vertical de V-Cards -->
+  <div class="container" style="max-width: 900px;">
+    
+    <div class="d-flex flex-column gap-2">
+      
+      <!-- Ventana 01 -->
+      <a href="ventana_01.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-box-arrow-in-right fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 01 - Inicio de sesión</div>
+            <p class="vcard-desc">Autenticación institucional de Google, método tradicional y manejo de sesiones vencidas[cite: 2].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-warning text-dark priority-badge">Prioridad Media</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 02 -->
+      <a href="ventana_02.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-house-door fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 02 - Inicio</div>
+            <p class="vcard-desc">Muro de actividad reciente con anuncios cronológicos, pendientes y accesos a indicadores[cite: 2].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-warning text-dark priority-badge">Prioridad Media</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 03 -->
+      <a href="ventana_03.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-envelope fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 03 - Mensajes</div>
+            <p class="vcard-desc">Desplegable rápido, hilos de conversación y vista completa (Enviados, Recibidos e Inspección)[cite: 3].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-secondary text-white priority-badge">Prioridad Baja</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 04 -->
+      <a href="ventana_04.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-bell fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 04 - Notificaciones</div>
+            <p class="vcard-desc">Notificaciones con enlaces directos y gestión de solicitudes de observación de aula[cite: 3].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-danger priority-badge">Prioridad Alta</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 05 -->
+      <a href="ventana_05.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-folder2-open fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 05 - Aula virtual</div>
+            <p class="vcard-desc">Estructura del curso, materiales, actualizaciones, conferencias, miembros y modo observador[cite: 3, 4].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-danger priority-badge">Prioridad Alta</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 06 -->
+      <a href="ventana_06.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-journal-check fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 06 - Actividad</div>
+            <p class="vcard-desc">Entregas de estudiantes, consigna, rúbrica evaluativa y panel de entregas recibidas para docentes[cite: 4, 5].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-dark priority-badge">Prioridad Máxima</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 07 -->
+      <a href="ventana_07.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-people fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 07 - Autoevaluacion y coevaluacion</div>
+            <p class="vcard-desc">Evaluación por rúbrica con opciones de anonimato y barra de progreso interactiva[cite: 5].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-secondary text-white priority-badge">Prioridad Baja</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 08 -->
+      <a href="ventana_08.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-speedometer2 fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 08 - Paneles indicadores globales</div>
+            <p class="vcard-desc">Tarjetas de resumen, asistencia, rendimiento institucional y filtros para directores e inspectores[cite: 5, 6].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-secondary text-white priority-badge">Prioridad Baja</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 09 -->
+      <a href="ventana_09.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-grid-3x3-gap fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 09 - Editor de rúbricas</div>
+            <p class="vcard-desc">Grilla editable de criterios y niveles con opciones de guardado y publicación institucional[cite: 6].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-secondary text-white priority-badge">Prioridad Baja</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+      <!-- Ventana 11 (Cursos/Aulas) -->
+      <a href="ventana_10.html" class="vcard-menu-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-light p-2 rounded text-primary"><i class="bi bi-journal-bookmark fs-4"></i></div>
+          <div>
+            <div class="vcard-title">Ventana 11 - Cursos / Aulas</div>
+            <p class="vcard-desc">Pestaña de cursos CREA, filtros de búsqueda, estado de permisos y solicitud de observación de aula[cite: 6, 7].</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-danger priority-badge">Prioridad Alta</span>
+          <i class="bi bi-chevron-right ms-2 text-muted"></i>
+        </div>
+      </a>
+
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

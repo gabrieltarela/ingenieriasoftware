@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ventana 05 - Aula Virtual | Plataforma ANEP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --anep-blue: #0056b3;
+      --anep-dark-blue: #003366;
+      --anep-light-bg: #f4f6f8;
+      --crea-sidebar-gray: #f8f9fa;
+      --crea-border: #dee2e6;
+    }
+
+    body {
+      background-color: var(--anep-light-bg);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+      margin: 0;
+      padding-bottom: 40px;
+    }
+
+    /* Barra de simulación de rol superior */
+    .role-switcher-bar {
+      background: #212529;
+      color: #fff;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Franja de Modo Observador */
+    .observer-banner {
+      background-color: #fff3cd;
+      color: #856404;
+      border-bottom: 2px solid #ffeeba;
+      padding: 10px 15px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    /* Navbar principal estilo CREA/ANEP */
+    .navbar-anep {
+      background-color: #ffffff;
+      border-bottom: 2px solid var(--anep-blue);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 6px 16px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+      color: var(--anep-blue);
+      text-decoration: none;
+      font-size: 1.25rem;
+    }
+
+    .brand-badge {
+      background-color: #0080ff;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: normal;
+    }
+
+    .nav-link-crea {
+      color: #495057;
+      font-weight: 500;
+      padding: 8px 12px !important;
+      border-radius: 4px;
+    }
+
+    .nav-link-crea:hover {
+      background-color: #e9ecef;
+      color: var(--anep-blue);
+    }
+
+    /* Cabezal de Curso */
+    .course-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--crea-border);
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .course-title {
+      color: #212529;
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin: 0;
+    }
+
+    .course-subtitle {
+      color: #6c757d;
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    /* Menú Lateral */
+    .sidebar-menu {
+      background: white;
+      border: 1px solid var(--crea-border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .sidebar-menu .list-group-item {
+      border: none;
+      border-bottom: 1px solid #f0f0f0;
+      color: #495057;
+      font-weight: 500;
+      padding: 10px 15px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-menu .list-group-item:hover {
+      background-color: #f8f9fa;
+      color: var(--anep-blue);
+    }
+
+    .sidebar-menu .list-group-item.active {
+      background-color: #e7f1ff;
+      color: var(--anep-blue);
+      font-weight: 700;
+      border-left: 4px solid var(--anep-blue);
+    }
+
+    .course-thumb {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+
+    /* Contenido Central y Recursos */
+    .content-card {
+      background: white;
+      border: 1px solid var(--crea-border);
+      border-radius: 6px;
+      padding: 20px;
+      min-height: 480px;
+    }
+
+    .folder-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.15s;
+    }
+
+    .folder-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .folder-icon {
+      font-size: 1.3rem;
+    }
+
+    .icon-folder-blue { color: #0d6efd; }
+    .icon-folder-green { color: #198754; }
+    .icon-news { color: #dc3545; }
+
+    /* Estado Docente: Oculto vs Publicado */
+    .resource-published {
+      color: #212529;
+    }
+
+    .resource-hidden {
+      color: #999999 !important;
+    }
+
+    .resource-hidden .resource-title {
+      color: #999999 !important;
+    }
+
+    .hidden-badge {
+      font-size: 0.7rem;
+      background: #e0e0e0;
+      color: #666;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+
+    .due-date {
+      font-size: 0.78rem;
+      color: #6c757d;
+    }
+
+    /* Tabla de Auditoría (Registro de Acciones) */
+    .audit-table {
+      font-size: 0.85rem;
+    }
+
+    .audit-table th {
+      background-color: #f8f9fa;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de Control de Simulador -->
+  <div class="role-switcher-bar">
+    <div>
+      <i class="bi bi-sliders me-2"></i><strong>Modo de Simulación:</strong>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label for="roleSelect" class="form-label mb-0 text-white me-1">Ver como:</label>
+      <select id="roleSelect" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="toggleRole()">
+        <option value="docente" selected>Docente / Titular (Ver ocultos)</option>
+        <option value="estudiante">Estudiante (Solo publicados)</option>
+        <option value="observador">Director / Inspector (Modo Observador)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Franja de Modo Observador (Condicional) -->
+  <div id="observerBanner" class="observer-banner d-none">
+    <i class="bi bi-eye-fill me-2"></i>Modo observador - solo lectura. Tu acceso queda registrado.
+  </div>
+
+  <!-- Barra Superior ANEP / CREA -->
+  <nav class="navbar navbar-expand-lg navbar-anep">
+    <div class="container-fluid">
+      <a class="brand-logo" href="#">
+        <span class="brand-badge">PANEP</span>
+        <span style="font-size: 1rem; color: #003366;">ANEP</span>
+      </a>
+      <div class="collapse navbar-collapse ms-4" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item"><a class="nav-link nav-link-crea" href="#">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link nav-link-crea active fw-bold" href="#">Cursos</a></li>
+          <li class="nav-item"><a class="nav-link nav-link-crea" href="#">Grupos</a></li>
+          <li class="nav-item"><a class="nav-link nav-link-crea" href="#">Recursos</a></li>
+          <li class="nav-item d-none" id="gestionMenuItem">
+            <a class="nav-link nav-link-crea text-primary fw-bold" href="#"><i class="bi bi-shield-lock me-1"></i>Gestión</a>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-search text-secondary" style="font-size: 1.1rem; cursor: pointer;"></i>
+          <i class="bi bi-calendar3 text-secondary" style="font-size: 1.1rem; cursor: pointer;"></i>
+          <i class="bi bi-envelope text-secondary" style="font-size: 1.1rem; cursor: pointer;"></i>
+          <i class="bi bi-bell text-secondary" style="font-size: 1.1rem; cursor: pointer;"></i>
+          <div class="d-flex align-items-center gap-2 border-start ps-3">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" class="rounded-circle" width="32" height="32" alt="Avatar">
+            <span class="small fw-semibold">Lucía Belén</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Cabezal del Curso -->
+  <div class="course-header">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h1 class="course-title">DIDÁCTICA PRÁCTICA DOCENTE II: 02INDPD22026252861 Anual Matutino</h1>
+          <p class="course-subtitle mb-0">INET - Instituto Normal de Enseñanza Técnica | Docente: Lucía Belén</p>
+        </div>
+        <div>
+          <button id="btnNotificacionesCurso" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-bell me-1"></i>Notificaciones
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido Principal -->
+  <div class="container-fluid">
+    <div class="row g-3">
+      
+      <!-- Menú Lateral Izquierdo -->
+      <div class="col-md-3 col-lg-2">
+        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400" class="course-thumb" alt="Curso Image">
+        
+        <div class="sidebar-menu list-group mb-3">
+          <a class="list-group-item active" id="tab-materiales" onclick="switchTab('materiales')">
+            <i class="bi bi-folder2-open"></i> Materiales
+          </a>
+          <a class="list-group-item" id="tab-actualizaciones" onclick="switchTab('actualizaciones')">
+            <i class="bi bi-megaphone"></i> Actualizaciones
+          </a>
+          <a class="list-group-item" id="tab-foros" onclick="switchTab('foros')">
+            <i class="bi bi-chat-square-text"></i> Foros
+          </a>
+          <a class="list-group-item" id="tab-conferencias" onclick="switchTab('conferencias')">
+            <i class="bi bi-camera-video"></i> Conferencias
+          </a>
+          <a class="list-group-item" id="tab-calificaciones" onclick="switchTab('calificaciones')">
+            <i class="bi bi-journal-check"></i> Calificaciones
+          </a>
+          <a class="list-group-item" id="tab-miembros" onclick="switchTab('miembros')">
+            <i class="bi bi-people"></i> Miembros
+          </a>
+          <!-- Pestaña adicional de Registro de Acciones para Rol Observador -->
+          <a class="list-group-item text-danger d-none" id="tab-registro" onclick="switchTab('registro')">
+            <i class="bi bi-clock-history"></i> Registro de acciones
+          </a>
+        </div>
+
+        <div class="p-3 bg-white border rounded">
+          <h6 class="fw-bold text-secondary style-title" style="font-size: 0.8rem;">INFORMACIÓN</h6>
+          <p class="small text-muted mb-0">Período de evaluación: Año Lectivo 2026 SGE</p>
+        </div>
+      </div>
+
+      <!-- Panel Central Dinámico -->
+      <div class="col-md-9 col-lg-7">
+        <div class="content-card">
+
+          <!-- VISTA 1: MATERIALES -->
+          <div id="view-materiales">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+              <h5 class="fw-bold mb-0">Materiales</h5>
+              <div id="btnAgregarMateriales">
+                <button class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Agregar contenido</button>
+              </div>
+            </div>
+
+            <div class="folder-structure">
+              <!-- Novedades -->
+              <div class="folder-item">
+                <i class="bi bi-chat-left-text-fill folder-icon icon-news"></i>
+                <div>
+                  <div class="fw-semibold">Novedades</div>
+                </div>
+              </div>
+
+              <!-- Semanas presenciales (Recurso Oculto de Ejemplo) -->
+              <div class="folder-item resource-item-hidden">
+                <i class="bi bi-distribute-vertical folder-icon text-secondary"></i>
+                <div>
+                  <div class="fw-semibold resource-title">Semanas presenciales <span class="hidden-badge"><i class="bi bi-eye-slash me-1"></i>Oculto para estudiantes</span></div>
+                </div>
+              </div>
+
+              <!-- Carpeta Práctica docente -->
+              <div class="folder-item">
+                <i class="bi bi-folder-fill folder-icon icon-folder-blue"></i>
+                <div class="w-100">
+                  <div class="fw-semibold text-primary" style="cursor: pointer;">Práctica docente</div>
+                  <div class="due-date">Fecha límite estimada: 21/10/26 23:59pm</div>
+                </div>
+              </div>
+
+              <!-- Carpeta Tareas varias -->
+              <div class="folder-item">
+                <i class="bi bi-folder-fill folder-icon icon-folder-green"></i>
+                <div>
+                  <div class="fw-semibold text-primary" style="cursor: pointer;">Tareas varias</div>
+                </div>
+              </div>
+
+              <!-- Unidad Didáctica -->
+              <div class="folder-item">
+                <i class="bi bi-folder-fill folder-icon icon-folder-blue"></i>
+                <div>
+                  <div class="fw-semibold text-primary" style="cursor: pointer;">Unidad didáctica</div>
+                </div>
+              </div>
+
+              <!-- Corrientes didácticas -->
+              <div class="folder-item">
+                <i class="bi bi-folder-fill folder-icon icon-folder-blue"></i>
+                <div>
+                  <div class="fw-semibold text-primary" style="cursor: pointer;">Corrientes didácticas</div>
+                </div>
+              </div>
+
+              <!-- Didáctica de la informática -->
+              <div class="folder-item">
+                <i class="bi bi-folder-fill folder-icon icon-folder-blue"></i>
+                <div>
+                  <div class="fw-semibold text-primary" style="cursor: pointer;">Didáctica de la informática</div>
+                </div>
+              </div>
+
+              <!-- IA (Oculto) -->
+              <div class="folder-item resource-item-hidden">
+                <i class="bi bi-folder-fill folder-icon icon-folder-blue"></i>
+                <div>
+                  <div class="fw-semibold resource-title">IA <span class="hidden-badge"><i class="bi bi-eye-slash me-1"></i>Oculto para estudiantes</span></div>
+                </div>
+              </div>
+
+              <!-- Primer Parcial -->
+              <div class="folder-item">
+                <i class="bi bi-file-earmark-text-fill folder-icon icon-folder-green"></i>
+                <div>
+                  <div class="fw-semibold text-primary" style="cursor: pointer;">Primer parcial</div>
+                  <div class="due-date">Vence el 15/11/26 23:59pm</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VISTA 2: ACTUALIZACIONES -->
+          <div id="view-actualizaciones" class="d-none">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Actualizaciones del Curso</h5>
+            <div class="card mb-3">
+              <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" class="rounded-circle" width="36" height="36" alt="Avatar">
+                  <div>
+                    <strong class="d-block">Lucía Belén</strong>
+                    <small class="text-muted">Ayer a las 14:30</small>
+                  </div>
+                </div>
+                <p class="card-text">Estimados estudiantes, recuerden que la entrega de la Planificación de la Unidad Didáctica vence este próximo viernes.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- VISTA 3: FOROS -->
+          <div id="view-foros" class="d-none">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Foros de Discusión</h5>
+            <div class="list-group">
+              <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1 fw-bold text-primary">Foro de consultas sobre el Parcial</h6>
+                  <small>3 respuestas</small>
+                </div>
+                <p class="mb-1 text-muted small">Espacio para intercambio de dudas sobre la consigna del primer parcial.</p>
+              </a>
+            </div>
+          </div>
+
+          <!-- VISTA 4: CONFERENCIAS -->
+          <div id="view-conferencias" class="d-none">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Conferencias Web</h5>
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Título</th>
+                  <th>Fecha y Hora</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Taller de Web3 y Educación</td>
+                  <td>20/10/2026 - 18:00 hs</td>
+                  <td><span class="badge bg-secondary">Programada</span></td>
+                  <td><button class="btn btn-sm btn-outline-secondary" disabled>Unirse</button></td>
+                </tr>
+                <tr>
+                  <td>Clase Virtual de Apoyo</td>
+                  <td>15/10/2026 - 08:00 hs</td>
+                  <td><span class="badge bg-success">En curso</span></td>
+                  <td><button class="btn btn-sm btn-success" id="btnUnirseConf">Unirse</button></td>
+                </tr>
+                <tr>
+                  <td>Presentación de Propuestas</td>
+                  <td>01/10/2026 - 10:00 hs</td>
+                  <td><span class="badge bg-light text-dark border">Finalizada</span></td>
+                  <td><button class="btn btn-sm btn-link text-muted" disabled>Finalizada</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- VISTA 5: CALIFICACIONES -->
+          <div id="view-calificaciones" class="d-none">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Libreta de Calificaciones</h5>
+            <p class="text-muted small">Muestra el resumen de entregas e historial de notas.</p>
+            <div class="alert alert-info">Listado de libreta de calificaciones cargado correctamente.</div>
+          </div>
+
+          <!-- VISTA 6: MIEMBROS -->
+          <div id="view-miembros" class="d-none">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Miembros del Curso</h5>
+            <ul class="list-group">
+              <!-- Docentes / Codocentes -->
+              <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-star-fill text-warning"></i>
+                  <strong>Lucía Belén</strong> <span class="badge bg-primary">Docente Titular</span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-star-fill text-warning"></i>
+                  <strong>Gabriel Tarela</strong> <span class="badge bg-info text-dark">Codocente</span>
+                </div>
+              </li>
+              <!-- Estudiantes en orden alfabético -->
+              <li class="list-group-item d-flex justify-content-between align-items-center ms-3">
+                <span>Alvarez, Sofia</span>
+                <span class="text-muted small">Estudiante</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center ms-3">
+                <span>Gómez, Martin</span>
+                <span class="text-muted small">Estudiante</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center ms-3">
+                <span>Rodríguez, Mateo</span>
+                <span class="text-muted small">Estudiante</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- VISTA 7: REGISTRO DE ACCIONES (SOLO MODO OBSERVADOR) -->
+          <div id="view-registro" class="d-none">
+            <h5 class="fw-bold mb-3 border-bottom pb-2 text-danger"><i class="bi bi-shield-check me-2"></i>Registro de Acciones (Auditoría)</h5>
+            
+            <!-- Filtros de Auditoría -->
+            <div class="row g-2 mb-3 bg-light p-2 rounded border">
+              <div class="col-md-4">
+                <label class="form-label small mb-1 fw-bold">Usuario</label>
+                <select class="form-select form-select-sm">
+                  <option selected>Todos los usuarios</option>
+                  <option>Lucía Belén (Docente)</option>
+                  <option>Gabriel Tarela (Codocente)</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small mb-1 fw-bold">Tipo de Acción</label>
+                <select class="form-select form-select-sm">
+                  <option selected>Todas las acciones</option>
+                  <option>Calificación</option>
+                  <option>Modificación de nota</option>
+                  <option>Publicación</option>
+                  <option>Eliminación</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small mb-1 fw-bold">Rango de fechas</label>
+                <input type="text" class="form-select form-select-sm" value="Últimos 30 días">
+              </div>
+            </div>
+
+            <!-- Tabla de Auditoría -->
+            <table class="table table-striped table-bordered audit-table">
+              <thead>
+                <tr>
+                  <th>Fecha y Hora</th>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Acción</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>15/10/2026 10:14</td>
+                  <td>Lucía Belén</td>
+                  <td>Docente Titular</td>
+                  <td><span class="badge bg-warning text-dark">Modificación de nota</span></td>
+                  <td>Nota de Actividad 3 cambiada de 6 a 8</td>
+                </tr>
+                <tr>
+                  <td>14/10/2026 16:45</td>
+                  <td>Lucía Belén</td>
+                  <td>Docente Titular</td>
+                  <td><span class="badge bg-success">Publicación</span></td>
+                  <td>Se publicó el recurso "Primer parcial"</td>
+                </tr>
+                <tr>
+                  <td>12/10/2026 09:30</td>
+                  <td>Gabriel Tarela</td>
+                  <td>Codocente</td>
+                  <td><span class="badge bg-info text-dark">Calificación</span></td>
+                  <td>Calificó la entrega de Sofia Alvarez (Nota: 10)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Actividades Próximas -->
+      <div class="col-md-12 col-lg-3">
+        <div class="bg-white border rounded p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold mb-0" style="font-size: 0.9rem;">Actividades próximas <i class="bi bi-calendar-event me-1"></i></h6>
+          </div>
+          <p class="text-muted small mb-0">No hay tareas o eventos agendados para los próximos días.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function toggleRole() {
+      const role = document.getElementById('roleSelect').value;
+      const observerBanner = document.getElementById('observerBanner');
+      const tabRegistro = document.getElementById('tab-registro');
+      const hiddenResources = document.querySelectorAll('.resource-item-hidden');
+      const btnAgregarMateriales = document.getElementById('btnAgregarMateriales');
+      const btnUnirseConf = document.getElementById('btnUnirseConf');
+      const gestionMenuItem = document.getElementById('gestionMenuItem');
+
+      if (role === 'observador') {
+        observerBanner.classList.remove('d-none');
+        tabRegistro.classList.remove('d-none');
+        gestionMenuItem.classList.remove('d-none');
+        if (btnAgregarMateriales) btnAgregarMateriales.classList.add('d-none');
+        if (btnUnirseConf) btnUnirseConf.disabled = true;
+        
+        hiddenResources.forEach(el => el.classList.remove('d-none'));
+      } else if (role === 'estudiante') {
+        observerBanner.classList.add('d-none');
+        tabRegistro.classList.add('d-none');
+        gestionMenuItem.classList.add('d-none');
+        if (btnAgregarMateriales) btnAgregarMateriales.classList.add('d-none');
+        if (btnUnirseConf) btnUnirseConf.disabled = false;
+
+        // Ocultar elementos en modo estudiante
+        hiddenResources.forEach(el => el.classList.add('d-none'));
+      } else {
+        // Rol Docente
+        observerBanner.classList.add('d-none');
+        tabRegistro.classList.add('d-none');
+        gestionMenuItem.classList.add('d-none');
+        if (btnAgregarMateriales) btnAgregarMateriales.classList.remove('d-none');
+        if (btnUnirseConf) btnUnirseConf.disabled = false;
+
+        // Ver ocultos con texto en gris
+        hiddenResources.forEach(el => el.classList.remove('d-none'));
+      }
+    }
+
+    function switchTab(tabName) {
+      // Ocultar todas las vistas
+      const views = ['materiales', 'actualizaciones', 'foros', 'conferencias', 'calificaciones', 'miembros', 'registro'];
+      views.forEach(v => {
+        const el = document.getElementById('view-' + v);
+        if (el) el.classList.add('d-none');
+        
+        const tabEl = document.getElementById('tab-' + v);
+        if (tabEl) tabEl.classList.remove('active');
+      });
+
+      // Mostrar la vista seleccionada
+      const activeView = document.getElementById('view-' + tabName);
+      if (activeView) activeView.classList.remove('d-none');
+
+      const activeTab = document.getElementById('tab-' + tabName);
+      if (activeTab) activeTab.classList.add('active');
+    }
+  </script>
+</body>
+</html>

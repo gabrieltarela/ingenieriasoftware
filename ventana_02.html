@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ventana 02 - Inicio | Plataforma Educativa ANEP</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        anepBlue: '#004B87',
+                        anepLightBlue: '#0072CE',
+                        anepHover: '#003A6B',
+                        anepGrayBg: '#F3F4F6',
+                        anepCardHeader: '#00589c',
+                        creaGreen: '#10B981',
+                        creaRed: '#EF4444'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+    </style>
+</head>
+<body class="bg-[#EAECEE] font-sans min-h-screen text-slate-800 flex flex-col">
+
+    <!-- BARRA SUPERIOR FIJA (Estilo CREA / ANEP) -->
+    <header class="bg-white border-b border-slate-300 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-[1400px] mx-auto px-2 sm:px-4 h-14 flex items-center justify-between">
+            
+            <!-- Izquierda: Logo y Menús Principales -->
+            <div class="flex items-center space-x-1 sm:space-x-3">
+                <!-- Logo ANEP -->
+                <a href="#" class="flex items-center space-x-2 mr-2 pr-3 border-r border-slate-200">
+                    <div class="bg-anepBlue text-white font-bold px-2 py-1 rounded text-xs tracking-widest flex items-center">
+                        <i class="fa-solid fa-graduation-cap text-sm mr-1"></i>
+                        <span>ANEP</span>
+                    </div>
+                </a>
+
+                <!-- Navegación Izquierda -->
+                <nav class="flex items-center space-x-1 text-xs sm:text-sm font-medium text-slate-700">
+                    <a href="#" class="px-2.5 py-1.5 rounded-md bg-slate-100 text-anepBlue font-semibold border-b-2 border-anepBlue">
+                        Inicio
+                    </a>
+
+                    <!-- Cursos Desplegable -->
+                    <div class="relative group">
+                        <button class="px-2.5 py-1.5 rounded-md hover:bg-slate-100 flex items-center space-x-1">
+                            <span>Cursos</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-500"></i>
+                        </button>
+                        <div class="absolute left-0 mt-1 w-64 bg-white rounded-md shadow-lg border border-slate-200 hidden group-hover:block z-50 py-1">
+                            <div class="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Mis Cursos</div>
+                            <a href="#" class="block px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100">
+                                <div class="font-medium text-slate-800">DIDÁCTICA PRÁCTICA DOCENTE II</div>
+                                <div class="text-[10px] text-slate-500">02INDPD22026252861 - Anual Matutino</div>
+                            </a>
+                            <a href="#" class="block px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100">
+                                <div class="font-medium text-slate-800">DESARROLLO WEB</div>
+                                <div class="text-[10px] text-slate-500">02T000002026252881 - 2do Semestre</div>
+                            </a>
+                            <a href="#" class="block px-3 py-2 text-xs hover:bg-slate-50">
+                                <div class="font-medium text-slate-800">EPISTEMOLOGÍA DE LA EDUCACIÓN</div>
+                                <div class="text-[10px] text-slate-500">02T15892026252807 - 1er Semestre</div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Grupos -->
+                    <div class="relative group">
+                        <button class="px-2.5 py-1.5 rounded-md hover:bg-slate-100 flex items-center space-x-1">
+                            <span>Grupos</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-500"></i>
+                        </button>
+                    </div>
+
+                    <!-- Recursos -->
+                    <a href="#" class="px-2.5 py-1.5 rounded-md hover:bg-slate-100">
+                        Recursos
+                    </a>
+
+                    <!-- Menú Nuevo "Gestión" (Solo visible para Director/Inspector) -->
+                    <div id="gestionMenuNav" class="hidden">
+                        <button class="px-2.5 py-1.5 rounded-md bg-amber-50 text-amber-800 font-semibold border border-amber-300 hover:bg-amber-100 flex items-center space-x-1">
+                            <i class="fa-solid fa-user-shield text-xs mr-1 text-amber-600"></i>
+                            <span>Gestión</span>
+                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                        </button>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Derecha: Buscador, Accesos y Menú de Usuario -->
+            <div class="flex items-center space-x-2 sm:space-x-3 text-slate-600">
+                
+                <!-- Selector interactivo de Rol para la demostración del prototipo -->
+                <div class="bg-slate-100 border border-slate-300 rounded-md p-1 flex items-center text-[11px] font-medium mr-1">
+                    <span class="text-slate-500 px-1.5 hidden lg:inline">Vista de Rol:</span>
+                    <button id="btnRoleEstudiante" onclick="setRole('docente')" class="px-2 py-0.5 rounded bg-white text-anepBlue shadow-sm font-semibold">
+                        Docente / Estudiante
+                    </button>
+                    <button id="btnRoleDirectivo" onclick="setRole('directivo')" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900">
+                        Director / Inspector
+                    </button>
+                </div>
+
+                <!-- Buscador -->
+                <button class="p-2 hover:bg-slate-100 rounded-full text-slate-600" title="Buscar">
+                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                </button>
+
+                <!-- Menú Aplicaciones / Accesos directos -->
+                <button class="p-2 hover:bg-slate-100 rounded-full text-slate-600 hidden sm:inline-block" title="Aplicaciones">
+                    <i class="fa-solid fa-grip text-base"></i>
+                </button>
+
+                <!-- Calendario -->
+                <button class="p-2 hover:bg-slate-100 rounded-full text-slate-600 hidden sm:inline-block" title="Calendario">
+                    <i class="fa-regular fa-calendar-days text-base"></i>
+                </button>
+
+                <!-- Mensajes con Badge -->
+                <a href="#" class="p-2 hover:bg-slate-100 rounded-full text-slate-600 relative" title="Mensajes">
+                    <i class="fa-regular fa-envelope text-base"></i>
+                    <span class="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">2</span>
+                </a>
+
+                <!-- Notificaciones con Badge -->
+                <a href="#" class="p-2 hover:bg-slate-100 rounded-full text-slate-600 relative" title="Notificaciones">
+                    <i class="fa-regular fa-bell text-base"></i>
+                    <span class="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">5</span>
+                </a>
+
+                <!-- Avatar Usuario -->
+                <div class="flex items-center space-x-2 pl-2 border-l border-slate-200">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80" 
+                         alt="Lucía Belén" 
+                         class="w-8 h-8 rounded-full object-cover border border-slate-300">
+                    <span id="userNameNav" class="text-xs font-semibold text-slate-800 hidden md:inline-block">Lucía Belén</span>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="max-w-[1300px] mx-auto w-full px-2 sm:px-4 py-4 flex-grow">
+
+        <!-- Pestañas Principales de Navegación -->
+        <div class="border-b border-slate-300 mb-4 flex space-x-8">
+            <button id="tabActividad" onclick="switchTab('actividad')" class="pb-2.5 text-sm font-bold text-slate-800 border-b-2 border-anepBlue flex items-center space-x-2">
+                <span>ACTIVIDAD RECIENTE</span>
+            </button>
+            <button id="tabPanelCurso" onclick="switchTab('panelCurso')" class="pb-2.5 text-sm font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center space-x-2">
+                <span>PANEL DEL CURSO</span>
+            </button>
+        </div>
+
+        <!-- CONTENIDO VISTA "ACTIVIDAD RECIENTE" -->
+        <div id="viewActividadReciente" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- COLUMNA CENTRAL (Muro de Publicaciones) - 2 Columnas en escritorio -->
+            <div class="lg:col-span-2 space-y-4">
+
+                <!-- Caja para Crear / Publicar Novedad -->
+                <div class="bg-white rounded-md border border-slate-300 p-3 shadow-sm">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full object-cover" alt="User">
+                        <input type="text" onclick="openNewPostModal()" placeholder="Publicar una actualización o novedad..." class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-600 cursor-pointer focus:outline-none transition">
+                    </div>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-600">
+                        <div class="flex items-center space-x-3">
+                            <button onclick="openNewPostModal('actualizacion')" class="hover:text-anepBlue flex items-center space-x-1 font-medium">
+                                <i class="fa-solid fa-bullhorn text-amber-500"></i>
+                                <span>Actualización</span>
+                            </button>
+                            <button onclick="openNewPostModal('tarea')" class="hover:text-anepBlue flex items-center space-x-1 font-medium">
+                                <i class="fa-solid fa-list-check text-emerald-600"></i>
+                                <span>Tarea</span>
+                            </button>
+                            <button onclick="openNewPostModal('evento')" class="hover:text-anepBlue flex items-center space-x-1 font-medium">
+                                <i class="fa-regular fa-calendar-plus text-sky-600"></i>
+                                <span>Evento</span>
+                            </button>
+                        </div>
+                        <button onclick="openNewPostModal()" class="bg-anepBlue hover:bg-anepHover text-white px-3 py-1 rounded text-xs font-medium transition">
+                            Publicar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Barra de Ordenamiento / Filtro -->
+                <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+                    <span>Muro general de novedades</span>
+                    <div class="flex items-center space-x-1">
+                        <span>Filtrar por:</span>
+                        <select class="bg-transparent font-medium text-slate-700 focus:outline-none cursor-pointer">
+                            <option>Más recientes</option>
+                            <option>Sin leer</option>
+                            <option>Anuncios fijados</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- MURO DE PUBLICACIONES (Publicaciones Urgentes y Docentes) -->
+
+                <!-- Publicación 1: AVISO INSTITUCIONAL OFICIAL SGE (Inspirado en la imagen de la descripción) -->
+                <div class="bg-white rounded-md border border-slate-300 shadow-sm overflow-hidden">
+                    <div class="p-4">
+                        <!-- Cabecera Publicación -->
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border border-slate-200" alt="Adriana Ferrara">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h4 class="text-xs font-bold text-slate-900">Adriana Ferrara</h4>
+                                        <span class="bg-sky-100 text-anepBlue text-[10px] font-bold px-1.5 py-0.5 rounded">CFE</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500">3 de Sept, 2026 a las 7:45 pm • Visibilidad: Todos los cursos</p>
+                                </div>
+                            </div>
+                            <button class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-ellipsis"></i></button>
+                        </div>
+
+                        <!-- Banner / Imagen Informativa -->
+                        <div class="bg-slate-900 rounded-lg p-4 text-white mb-3 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-slate-800">
+                            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div class="space-y-1 text-center md:text-left">
+                                    <span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded tracking-wider uppercase">AVISO IMPORTANTE</span>
+                                    <h3 class="text-sm md:text-base font-bold text-amber-300">A partir del 30 de setiembre, el ingreso al SGE requerirá DOBLE AUTENTICACIÓN.</h3>
+                                    <p class="text-xs text-slate-300">1. Recibirás un token por correo electrónico para completar el ingreso.</p>
+                                    <p class="text-xs text-slate-300">2. Verifica que tu correo electrónico esté actualizado en el SGE.</p>
+                                </div>
+                                <div class="text-4xl text-amber-400 flex-shrink-0">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contenido Texto -->
+                        <div class="text-xs text-slate-700 space-y-2">
+                            <p class="font-medium">A continuación incluimos un breve instructivo:</p>
+                            <p class="font-bold text-slate-800">¿Cómo ingresar a SGE-SGD con doble autenticación?</p>
+                            <p><span class="font-semibold">Opción A: Código por correo.</span> Al ingresar usuario y contraseña, aparecerá la pantalla "Verificación de identidad (MFA)" con dos botones:</p>
+                            <ul class="list-disc list-inside pl-2 space-y-1 text-slate-600">
+                                <li>Hacer clic en "Enviar código al correo".</li>
+                                <li>Ingresar el código recibido y presionar Validar.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Pie de la Publicación e Interacciones -->
+                    <div class="bg-slate-50 px-4 py-2 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+                        <div class="flex items-center space-x-4">
+                            <button onclick="toggleLike(this)" class="hover:text-anepBlue flex items-center space-x-1">
+                                <i class="fa-regular fa-thumbs-up"></i>
+                                <span>Me gusta (<span class="like-count">14</span>)</span>
+                            </button>
+                            <button onclick="focusComment('commentInput1')" class="hover:text-anepBlue flex items-center space-x-1">
+                                <i class="fa-regular fa-comment"></i>
+                                <span>Comentarios (2)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sección de Comentarios Integrada -->
+                    <div class="bg-slate-50/50 p-4 border-t border-slate-100 space-y-3">
+                        <div class="flex space-x-2 text-xs">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-6 h-6 rounded-full object-cover mt-0.5" alt="User">
+                            <div class="bg-white p-2 rounded border border-slate-200 flex-grow">
+                                <span class="font-bold text-slate-800">Mariana Silva</span>
+                                <span class="text-[10px] text-slate-400 ml-2">Hace 2 horas</span>
+                                <p class="text-slate-700 text-[11px] mt-0.5">¿Aplica también para los docentes sustitutos?</p>
+                            </div>
+                        </div>
+
+                        <!-- Input para nuevo comentario -->
+                        <div class="flex items-center space-x-2 pt-1">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80" class="w-6 h-6 rounded-full object-cover" alt="Lucía">
+                            <input id="commentInput1" type="text" onkeypress="addComment(event, 'commentsList1')" placeholder="Escribe un comentario..." class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-anepBlue">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Publicación 2: Docente de Curso (Ruben Rada) -->
+                <div class="bg-white rounded-md border border-slate-300 shadow-sm p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border border-slate-200" alt="Ruben rada">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h4 class="text-xs font-bold text-slate-900">RUBEN RADA</h4>
+                                    <span class="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-1.5 py-0.5 rounded">Ingresados 2026</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500">Ayer a las 2:15 pm en <a href="#" class="text-anepBlue hover:underline">DIDÁCTICA PRÁCTICA DOCENTE II</a></p>
+                            </div>
+                        </div>
+                        <button class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-ellipsis"></i></button>
+                    </div>
+
+                    <p class="text-xs text-slate-700 mb-3">
+                        Buenas tardes a todos. Ya se encuentran disponibles en la carpeta de la <span class="font-semibold text-anepBlue">Unidad Didáctica</span> las consignas para el primer parcial presencial. Recuerden revisar la rúbrica asociada antes de subir el avance.
+                    </p>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded p-2.5 flex items-center space-x-3 mb-3 hover:bg-slate-100 cursor-pointer transition">
+                        <div class="bg-red-100 text-red-600 p-2 rounded">
+                            <i class="fa-solid fa-file-pdf text-lg"></i>
+                        </div>
+                        <div class="text-xs">
+                            <div class="font-semibold text-slate-800">Consigna_Parcial_1_Didactica.pdf</div>
+                            <div class="text-[10px] text-slate-500"> Documento PDF • 2.4 MB</div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-2 flex items-center justify-between text-xs text-slate-600">
+                        <button onclick="toggleLike(this)" class="hover:text-anepBlue flex items-center space-x-1">
+                            <i class="fa-regular fa-thumbs-up"></i>
+                            <span>Me gusta (<span class="like-count">8</span>)</span>
+                        </button>
+                        <span class="text-[11px] text-slate-400">4 comentarios</span>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- COLUMNA DERECHA (Paneles Dinámicos según el Rol seleccionado) -->
+            <div class="space-y-4">
+
+                <!-- PANEL A: PARA ESTUDIANTES / DOCENTES (Pendientes y Próximos) -->
+                <div id="panelDocenteEstudiante" class="space-y-4">
+                    
+                    <!-- Tarjeta de Pendientes -->
+                    <div class="bg-white rounded-md border border-slate-300 shadow-sm overflow-hidden">
+                        <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center">
+                                <i class="fa-solid fa-clock text-amber-500 mr-1.5"></i>
+                                Pendientes
+                            </h3>
+                            <span class="text-[10px] bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded">3 Atenciones</span>
+                        </div>
+
+                        <div class="p-3 space-y-3">
+                            
+                            <!-- Subsección VENCIDO -->
+                            <div>
+                                <span class="text-[10px] font-bold text-red-600 tracking-wider uppercase block mb-1.5">VENCIDO</span>
+                                
+                                <div class="space-y-2">
+                                    <!-- Tarea Pendiente 1 -->
+                                    <div class="p-2 border-l-2 border-red-500 bg-red-50/40 rounded-r hover:bg-red-50 transition flex items-start justify-between">
+                                        <div class="space-y-0.5">
+                                            <a href="#" class="text-xs font-bold text-slate-800 hover:text-anepBlue block leading-tight">
+                                                Actividad 2: Epistemología y Pensamiento
+                                            </a>
+                                            <p class="text-[10px] text-slate-500 font-medium">EPISTEMOLOGÍA DE LA EDUCACIÓN</p>
+                                            <p class="text-[10px] text-red-600 font-semibold">Atrasado 2 días</p>
+                                        </div>
+                                        <button title="Ver detalles" class="text-slate-400 hover:text-anepBlue">
+                                            <i class="fa-solid fa-circle-info text-sm"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Tarea Pendiente 2 -->
+                                    <div class="p-2 border-l-2 border-red-500 bg-red-50/40 rounded-r hover:bg-red-50 transition flex items-start justify-between">
+                                        <div class="space-y-0.5">
+                                            <a href="#" class="text-xs font-bold text-slate-800 hover:text-anepBlue block leading-tight">
+                                                Actividad 1.2 Opcional: E. Días - Filosofía
+                                            </a>
+                                            <p class="text-[10px] text-slate-500 font-medium">FILOSOFÍA DE LA EDUCACIÓN</p>
+                                            <p class="text-[10px] text-red-600 font-semibold">Atrasado 5 días</p>
+                                        </div>
+                                        <button title="Ver detalles" class="text-slate-400 hover:text-anepBlue">
+                                            <i class="fa-solid fa-circle-info text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Subsección PRÓXIMO -->
+                            <div class="border-t border-slate-100 pt-2">
+                                <span class="text-[10px] font-bold text-emerald-600 tracking-wider uppercase block mb-1.5">PRÓXIMOS DÍAS</span>
+
+                                <div class="space-y-2">
+                                    <!-- Tarea Próxima 1 -->
+                                    <div class="p-2 border-l-2 border-emerald-500 bg-emerald-50/30 rounded-r hover:bg-emerald-50 transition flex items-start justify-between">
+                                        <div class="space-y-0.5">
+                                            <a href="#" class="text-xs font-bold text-slate-800 hover:text-anepBlue block leading-tight">
+                                                Entrega Avance del Proyecto Web
+                                            </a>
+                                            <p class="text-[10px] text-slate-500 font-medium">DESARROLLO WEB</p>
+                                            <p class="text-[10px] text-emerald-700 font-medium">Vence: Viernes 14, 23:59 hs</p>
+                                        </div>
+                                        <button title="Ver detalles" class="text-slate-400 hover:text-anepBlue">
+                                            <i class="fa-solid fa-circle-info text-sm"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Tarea Próxima 2 -->
+                                    <div class="p-2 border-l-2 border-sky-500 bg-sky-50/30 rounded-r hover:bg-sky-50 transition flex items-start justify-between">
+                                        <div class="space-y-0.5">
+                                            <a href="#" class="text-xs font-bold text-slate-800 hover:text-anepBlue block leading-tight">
+                                                Foro: Discusión Didáctica de la Informática
+                                            </a>
+                                            <p class="text-[10px] text-slate-500 font-medium">DIDÁCTICA PRÁCTICA DOCENTE II</p>
+                                            <p class="text-[10px] text-sky-700 font-medium">Vence: Lunes 17, 18:00 hs</p>
+                                        </div>
+                                        <button title="Ver detalles" class="text-slate-400 hover:text-anepBlue">
+                                            <i class="fa-solid fa-circle-info text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- PANEL B: EXCLUSIVO PARA DIRECTOR / INSPECTOR (Acceso a Paneles Indicadores Globales) -->
+                <div id="panelDirectivoInspector" class="hidden space-y-4">
+                    
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-300 rounded-md p-3.5 shadow-sm">
+                        <div class="flex items-center space-x-2 text-amber-900 font-bold text-xs mb-2 border-b border-amber-200/80 pb-1.5">
+                            <i class="fa-solid fa-chart-line text-amber-600 text-sm"></i>
+                            <span>PANELES DE INDICADORES GLOBALES</span>
+                        </div>
+                        <p class="text-[11px] text-amber-800 mb-3">
+                            Acceso exclusivo para el equipo directivo e inspección para monitoreo de centros y asignaturas.
+                        </p>
+
+                        <div class="space-y-2">
+                            <!-- Acceso Indicadores de Centro -->
+                            <a href="#" class="block bg-white hover:bg-amber-100/50 border border-amber-200 rounded p-2.5 transition text-xs shadow-xs">
+                                <div class="flex items-center justify-between font-bold text-slate-800">
+                                    <span> Panel General del Centro</span>
+                                    <i class="fa-solid fa-arrow-right text-amber-600"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5">Asistencia, entregas a tiempo e inasistencias acumuladas.</p>
+                            </a>
+
+                            <!-- Acceso Monitoreo de Cursos e Inspección -->
+                            <a href="#" class="block bg-white hover:bg-amber-100/50 border border-amber-200 rounded p-2.5 transition text-xs shadow-xs">
+                                <div class="flex items-center justify-between font-bold text-slate-800">
+                                    <span> Indicadores por Asignatura</span>
+                                    <i class="fa-solid fa-arrow-right text-amber-600"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5">Tendencias de calificaciones y tasa de entregas sin calificar.</p>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Solicitudes de Observación de Aula (Resumen para Inspector/Director) -->
+                    <div class="bg-white rounded-md border border-slate-300 p-3 shadow-sm text-xs">
+                        <div class="font-bold text-slate-800 mb-2 flex items-center justify-between">
+                            <span> Observaciones de Aula</span>
+                            <span class="bg-sky-100 text-anepBlue text-[10px] px-1.5 py-0.5 rounded font-bold">1 Activa</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 mb-2">Tienes una solicitud autorizada para ingresar en modo observador.</p>
+                        <div class="bg-slate-50 border border-slate-200 p-2 rounded text-[11px] space-y-1">
+                            <div class="font-semibold text-slate-800">Didáctica Practica II — Grupo 02</div>
+                            <div class="text-slate-500">Docente: rUBEN RADA</div>
+                            <div class="text-emerald-600 font-medium"> Estado: Autorizado</div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- CONTENIDO VISTA "PANEL DEL CURSO" (Oculto por defecto, alternable mediante pestañas) -->
+        <div id="viewPanelCurso" class="hidden">
+            <div class="bg-white rounded-md border border-slate-300 p-6 text-center shadow-sm">
+                <i class="fa-solid fa-layer-group text-4xl text-anepLightBlue mb-3"></i>
+                <h3 class="text-base font-bold text-slate-800">Vista Resumida del Panel del Curso</h3>
+                <p class="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4">
+                    Muestra el consolidado de accesos directos, módulos activos y estructura del curso actualmente seleccionado.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-3xl mx-auto">
+                    <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                        <div class="font-bold text-xs text-anepBlue mb-1">Módulos Activos</div>
+                        <div class="text-xl font-extrabold text-slate-800">6 Carpetas</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                        <div class="font-bold text-xs text-anepBlue mb-1">Tareas Publicadas</div>
+                        <div class="text-xl font-extrabold text-slate-800">12 Tareas</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                        <div class="font-bold text-xs text-anepBlue mb-1">Miembros del Curso</div>
+                        <div class="text-xl font-extrabold text-slate-800">28 Estudiantes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL INTERACTIVO PARA CREAR NUEVA PUBLICACIÓN -->
+    <div id="newPostModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg max-w-lg w-full shadow-xl border border-slate-200 overflow-hidden">
+            <div class="bg-anepBlue px-4 py-3 text-white flex items-center justify-between">
+                <h3 class="text-sm font-bold flex items-center">
+                    <i class="fa-solid fa-pen-to-square mr-2"></i> Crear Publicación / Anuncio
+                </h3>
+                <button onclick="closeNewPostModal()" class="text-white/80 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Publicar en:</label>
+                    <select class="w-full text-xs border border-slate-300 rounded p-2 focus:ring-anepBlue">
+                        <option>DIDÁCTICA PRÁCTICA DOCENTE II (Todos los grupos)</option>
+                        <option>DESARROLLO WEB - 2do Semestre</option>
+                        <option>EPISTEMOLOGÍA DE LA EDUCACIÓN</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Tipo de contenido:</label>
+                    <div class="flex space-x-2">
+                        <button type="button" class="px-3 py-1.5 rounded bg-anepBlue text-white text-xs font-medium">Actualización</button>
+                        <button type="button" class="px-3 py-1.5 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium">Tarea</button>
+                        <button type="button" class="px-3 py-1.5 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium">Evento</button>
+                    </div>
+                </div>
+
+                <div>
+                    <textarea placeholder="Escribe el mensaje o anuncio para los estudiantes..." class="w-full h-28 border border-slate-300 rounded p-2.5 text-xs focus:ring-anepBlue focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-500">
+                    <div class="flex space-x-2">
+                        <button class="p-1.5 hover:bg-slate-100 rounded text-slate-600" title="Adjuntar Archivo"><i class="fa-solid fa-paperclip"></i></button>
+                        <button class="p-1.5 hover:bg-slate-100 rounded text-slate-600" title="Enlace Web"><i class="fa-solid fa-link"></i></button>
+                        <button class="p-1.5 hover:bg-slate-100 rounded text-slate-600" title="Insertar Recurso"><i class="fa-solid fa-folder-plus"></i></button>
+                    </div>
+                    <div class="space-x-2">
+                        <button onclick="closeNewPostModal()" class="px-3 py-1.5 rounded border border-slate-300 text-slate-700 hover:bg-slate-50">Cancelar</button>
+                        <button onclick="publishPostSimulation()" class="px-4 py-1.5 rounded bg-anepBlue text-white font-medium hover:bg-anepHover">Publicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS DE INTERACTIVIDAD -->
+    <script>
+        // Alternar entre pestañas "ACTIVIDAD RECIENTE" y "PANEL DEL CURSO"
+        function switchTab(tab) {
+            const btnActividad = document.getElementById('tabActividad');
+            const btnPanel = document.getElementById('tabPanelCurso');
+            const viewActividad = document.getElementById('viewActividadReciente');
+            const viewPanel = document.getElementById('viewPanelCurso');
+
+            if (tab === 'actividad') {
+                btnActividad.className = "pb-2.5 text-sm font-bold text-slate-800 border-b-2 border-anepBlue flex items-center space-x-2";
+                btnPanel.className = "pb-2.5 text-sm font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center space-x-2";
+                viewActividad.classList.remove('hidden');
+                viewPanel.classList.add('hidden');
+            } else {
+                btnPanel.className = "pb-2.5 text-sm font-bold text-slate-800 border-b-2 border-anepBlue flex items-center space-x-2";
+                btnActividad.className = "pb-2.5 text-sm font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center space-x-2";
+                viewPanel.classList.remove('hidden');
+                viewActividad.classList.add('hidden');
+            }
+        }
+
+        // Cambio interactivo de Rol para la presentación (Docente/Estudiante vs Director/Inspector)
+        function setRole(role) {
+            const btnEst = document.getElementById('btnRoleEstudiante');
+            const btnDir = document.getElementById('btnRoleDirectivo');
+            const panelDoc = document.getElementById('panelDocenteEstudiante');
+            const panelDir = document.getElementById('panelDirectivoInspector');
+            const gestionNav = document.getElementById('gestionMenuNav');
+            const userNameNav = document.getElementById('userNameNav');
+
+            if (role === 'docente') {
+                btnEst.className = "px-2 py-0.5 rounded bg-white text-anepBlue shadow-sm font-semibold";
+                btnDir.className = "px-2 py-0.5 rounded text-slate-600 hover:text-slate-900";
+                panelDoc.classList.remove('hidden');
+                panelDir.classList.add('hidden');
+                gestionNav.classList.add('hidden');
+                userNameNav.textContent = "Lucía Belén";
+            } else {
+                btnDir.className = "px-2 py-0.5 rounded bg-white text-amber-800 shadow-sm font-semibold";
+                btnEst.className = "px-2 py-0.5 rounded text-slate-600 hover:text-slate-900";
+                panelDir.classList.remove('hidden');
+                panelDoc.classList.add('hidden');
+                gestionNav.classList.remove('hidden');
+                userNameNav.textContent = "Insp. M. Rodríguez";
+            }
+        }
+
+        // Toggle Me gusta
+        function toggleLike(button) {
+            const countSpan = button.querySelector('.like-count');
+            let count = parseInt(countSpan.textContent);
+            if (button.classList.contains('text-anepBlue')) {
+                button.classList.remove('text-anepBlue', 'font-bold');
+                countSpan.textContent = count - 1;
+            } else {
+                button.classList.add('text-anepBlue', 'font-bold');
+                countSpan.textContent = count + 1;
+            }
+        }
+
+        // Enfocar input de comentario
+        function focusComment(inputId) {
+            document.getElementById(inputId).focus();
+        }
+
+        // Modal de Nueva Publicación
+        function openNewPostModal(type) {
+            document.getElementById('newPostModal').classList.remove('hidden');
+            document.getElementById('newPostModal').classList.add('flex');
+        }
+
+        function closeNewPostModal() {
+            document.getElementById('newPostModal').classList.add('hidden');
+            document.getElementById('newPostModal').classList.remove('flex');
+        }
+
+        function publishPostSimulation() {
+            closeNewPostModal();
+            alert("¡Publicación registrada con éxito en la plataforma!");
+        }
+    </script>
+</body>
+</html>

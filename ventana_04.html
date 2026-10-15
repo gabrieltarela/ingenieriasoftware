@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CREA ANEP - Ventana 04: Notificaciones</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        crea: {
+                            blue: '#0056b3',
+                            hoverBlue: '#004085',
+                            lightBlue: '#e6f0fa',
+                            darkHeader: '#1e293b',
+                            bg: '#f4f6f8',
+                            border: '#e2e8f0',
+                            accent: '#0284c7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f8;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen">
+
+    <!-- TOP NAVIGATION BAR (CREA / ANEP Style) -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Left Navigation Links & Logo -->
+                <div class="flex items-center space-x-6">
+                    <!-- Brand / Logo -->
+                    <div class="flex items-center space-x-2 cursor-pointer">
+                        <div class="bg-crea-blue text-white font-bold px-2.5 py-1 rounded-md text-xl tracking-wider shadow-sm">
+                            ANEP
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 bg-blue-100 text-crea-blue rounded">CREA</span>
+                    </div>
+
+                    <!-- Navigation Links -->
+                    <nav class="hidden md:flex space-x-1 text-sm font-medium">
+                        <a href="#" class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition">Inicio</a>
+                        
+                        <!-- Cursos Dropdown -->
+                        <div class="relative group">
+                            <button class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition inline-flex items-center">
+                                Cursos <i class="fa-solid fa-chevron-down ml-1.5 text-xs text-gray-400"></i>
+                            </button>
+                            <div class="absolute left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg hidden group-hover:block py-1 z-50">
+                                <a href="#" class="block px-4 py-2 text-xs text-gray-700 hover:bg-crea-lightBlue hover:text-crea-blue font-medium">Didáctica Práctica Docente II - 02INDPD</a>
+                                <a href="#" class="block px-4 py-2 text-xs text-gray-700 hover:bg-crea-lightBlue hover:text-crea-blue font-medium">Desarrollo Web - CFE 2026</a>
+                                <a href="#" class="block px-4 py-2 text-xs text-gray-700 hover:bg-crea-lightBlue hover:text-crea-blue font-medium">Sistemas Operativos - INET</a>
+                            </div>
+                        </div>
+
+                        <a href="#" class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition">Grupos</a>
+                        <a href="#" class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition">Recursos</a>
+                        <a href="#" id="navGestion" class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition">Gestión</a>
+                    </nav>
+                </div>
+
+                <!-- Right Header Tools & Profile -->
+                <div class="flex items-center space-x-3">
+                    <!-- Search Input -->
+                    <div class="relative hidden sm:block w-44 md:w-56">
+                        <input type="text" placeholder="Buscar..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-transparent rounded-full focus:bg-white focus:border-crea-blue focus:outline-none transition">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-gray-400"></i>
+                    </div>
+
+                    <!-- App Launcher Icon -->
+                    <button class="p-2 text-gray-500 hover:text-crea-blue hover:bg-gray-100 rounded-full transition" title="Aplicaciones Ceibal/ANEP">
+                        <i class="fa-solid fa-border-all text-base"></i>
+                    </button>
+
+                    <!-- Calendar Icon -->
+                    <button class="p-2 text-gray-500 hover:text-crea-blue hover:bg-gray-100 rounded-full transition" title="Calendario">
+                        <i class="fa-regular fa-calendar text-base"></i>
+                    </button>
+
+                    <!-- Messages Icon -->
+                    <button class="p-2 text-gray-500 hover:text-crea-blue hover:bg-gray-100 rounded-full transition relative" title="Mensajes">
+                        <i class="fa-regular fa-envelope text-lg"></i>
+                    </button>
+
+                    <!-- NOTIFICATIONS BELL WITH QUICK DROPDOWN -->
+                    <div class="relative">
+                        <button id="notifDropdownToggle" class="p-2 text-gray-600 hover:text-crea-blue hover:bg-gray-100 rounded-full transition relative">
+                            <i class="fa-regular fa-bell text-lg"></i>
+                            <span id="headerNotifBadge" class="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center border-2 border-white">3</span>
+                        </button>
+
+                        <!-- Quick Notifications Dropdown Menu -->
+                        <div id="quickNotifDropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Últimas Notificaciones</h4>
+                                <button onclick="markAllAsRead()" class="text-[11px] text-crea-blue hover:underline font-medium">Marcar leídas</button>
+                            </div>
+                            <div class="divide-y divide-gray-100 max-h-80 overflow-y-auto custom-scrollbar" id="quickNotifList">
+                                <!-- Dynamic recent notifications inserted here -->
+                            </div>
+                            <div class="p-2 bg-gray-50 text-center border-t border-gray-100">
+                                <button onclick="scrollToFullNotifs()" class="w-full py-1.5 text-xs text-crea-blue font-semibold hover:bg-blue-50 rounded transition">
+                                    Ver todas las notificaciones
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Avatar & Profile Dropdown -->
+                    <div class="flex items-center space-x-2 pl-2 border-l border-gray-200">
+                        <img id="userAvatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" alt="Usuario" class="w-8 h-8 rounded-full object-cover ring-2 ring-crea-blue/30">
+                        <div class="hidden lg:block text-left">
+                            <span id="headerUserName" class="block text-xs font-semibold text-gray-800 leading-tight">Lucía Belén</span>
+                            <span id="headerUserRole" class="block text-[10px] text-gray-500 leading-tight">Docente - INET</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- ROLE SWITCHER FLOATING RIBBON -->
+    <div class="bg-slate-800 text-white text-xs py-2 px-4 shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-users-gear text-sky-400"></i>
+                <span class="font-medium text-slate-300">Simulador de Rol para Notificaciones CREA:</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="roleSwitch" value="Docente" checked onchange="switchRole('Docente')" class="form-radio text-crea-blue focus:ring-0">
+                    <span class="ml-1 text-slate-200">Docente (Lucía)</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="roleSwitch" value="Inspector" onchange="switchRole('Inspector')" class="form-radio text-crea-blue focus:ring-0">
+                    <span class="ml-1 text-slate-200">Inspector (Insp. Roberto Silva)</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="roleSwitch" value="Estudiante" onchange="switchRole('Estudiante')" class="form-radio text-crea-blue focus:ring-0">
+                    <span class="ml-1 text-slate-200">Estudiante (Mateo)</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN BODY CONTENT -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Header Page Title -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 pb-4 border-b border-gray-200 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800 tracking-tight flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-crea-blue"></i> Centro de Notificaciones
+                </h1>
+                <p class="text-xs text-gray-500 mt-1">Avisos, solicitudes de observación y novedades de la plataforma CREA / ANEP</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="markAllAsRead()" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm transition inline-flex items-center gap-1.5">
+                    <i class="fa-solid fa-check-double text-crea-blue"></i> Marcar todas como leídas
+                </button>
+            </div>
+        </div>
+
+        <!-- FILTERS AND CONTROLS CARD -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                
+                <!-- Category Tabs -->
+                <div class="flex flex-wrap gap-1.5" id="categoryFilterContainer">
+                    <button onclick="setCategoryFilter('todas')" id="catTab-todas" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-crea-lightBlue text-crea-blue border border-blue-200 transition">
+                        Todas
+                    </button>
+                    <button onclick="setCategoryFilter('observaciones')" id="catTab-observaciones" class="px-3.5 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition border border-transparent">
+                        <i class="fa-solid fa-clipboard-check text-indigo-500 mr-1"></i> Solicitudes de observación
+                    </button>
+                    <button onclick="setCategoryFilter('tareas')" id="catTab-tareas" class="px-3.5 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition border border-transparent">
+                        <i class="fa-solid fa-file-lines text-amber-500 mr-1"></i> Tareas y Actividades
+                    </button>
+                    <button onclick="setCategoryFilter('anuncios')" id="catTab-anuncios" class="px-3.5 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition border border-transparent">
+                        <i class="fa-solid fa-bullhorn text-emerald-500 mr-1"></i> Anuncios y Sistema
+                    </button>
+                </div>
+
+                <!-- Read Status Filters -->
+                <div class="flex items-center space-x-2 self-end lg:self-auto">
+                    <span class="text-xs font-medium text-gray-500">Estado:</span>
+                    <button onclick="setStatusFilter('todas')" id="statusBtn-todas" class="px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                        Todas
+                    </button>
+                    <button onclick="setStatusFilter('unread')" id="statusBtn-unread" class="px-2.5 py-1 text-xs font-medium text-gray-500 rounded-md hover:bg-gray-100">
+                        No leídas
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- MAIN NOTIFICATIONS LIST CONTAINER -->
+        <div id="fullNotifContainer" class="space-y-3">
+            <!-- Dynamic notifications list rendered via JS -->
+        </div>
+
+        <!-- Toast Notification Alert -->
+        <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-50 hidden flex items-center space-x-3 border border-slate-700">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span id="toastMessage">Acción realizada correctamente.</span>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-gray-200 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500">
+            <p>Administración Nacional de Educación Pública (ANEP) - Consejo de Formación en Educación (CFE) | Uruguay</p>
+            <p class="mt-1 text-[11px] text-gray-400">Entorno Virtual de Aprendizaje CREA 2026 - Módulo de Notificaciones Institucionales</p>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE JAVASCRIPT LOGIC -->
+    <script>
+        // DATA MODEL FOR NOTIFICATIONS
+        let currentRole = 'Docente';
+        let activeCategoryFilter = 'todas';
+        let activeStatusFilter = 'todas';
+
+        // Observation request state preserved across re-renders
+        let obsRequestStatus = 'pending'; // 'pending', 'authorized', 'rejected'
+
+        const notifDatabase = {
+            Docente: [
+                {
+                    id: 'doc-1',
+                    type: 'observacion_request',
+                    category: 'observaciones',
+                    title: 'Solicitud de observación de aula',
+                    requester: 'Insp. Roberto Silva',
+                    requesterRole: 'Inspector de Informática - CFE',
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+                    course: 'Didáctica Práctica Docente II - 02INDPD',
+                    reason: 'Acompañamiento pedagógico del 2do semestre y verificación de proyecto final',
+                    period: '15/10/2026 al 30/10/2026',
+                    time: 'Hace 15 minutos',
+                    read: false
+                },
+                {
+                    id: 'doc-2',
+                    type: 'tarea_entrega',
+                    category: 'tareas',
+                    title: 'Nueva entrega registrada',
+                    user: 'Estudiante Mateo Rossi',
+                    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+                    course: 'Desarrollo Web - CFE 2026',
+                    detail: 'Ha entregado el Trabajo Práctico N° 4: "Layouts Flexbox y Grid Responsive".',
+                    time: 'Hace 1 hora',
+                    read: false
+                },
+                {
+                    id: 'doc-3',
+                    type: 'anuncio_sistema',
+                    category: 'anuncios',
+                    title: 'Mantenimiento Programado del Sistema CREA',
+                    user: 'Administración Ceibal / ANEP',
+                    avatar: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=150',
+                    course: 'Institucional',
+                    detail: 'El próximo sábado de 02:00 a 04:00 hs se realizarán tareas de mantenimiento en el servidor de conferencias.',
+                    time: 'Hace 5 horas',
+                    read: true
+                },
+                {
+                    id: 'doc-4',
+                    type: 'tarea_comentario',
+                    category: 'tareas',
+                    title: 'Consulta en Foro de Actividad',
+                    user: 'Estudiante Lucía Gómez',
+                    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+                    course: 'Didáctica Práctica Docente II - 02INDPD',
+                    detail: 'Publicó una duda en el foro: "Criterios para la fundamentación metodológica".',
+                    time: 'Ayer, 18:30',
+                    read: true
+                }
+            ],
+            Inspector: [
+                {
+                    id: 'insp-1',
+                    type: 'observacion_status',
+                    category: 'observaciones',
+                    title: 'Estado de Solicitud de Observación de Aula',
+                    user: 'Prof. Lucía Belén',
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+                    course: 'Didáctica Práctica Docente II - 02INDPD',
+                    statusText: 'AUTORIZADA',
+                    period: '15/10/2026 al 30/10/2026',
+                    time: 'Hace 10 minutos',
+                    read: false
+                },
+                {
+                    id: 'insp-2',
+                    type: 'anuncio_sistema',
+                    category: 'anuncios',
+                    title: 'Alerta Global: Cierre de Actas Semestrales',
+                    user: 'Dirección CFE ANEP',
+                    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150',
+                    course: 'Gestión de Inspección',
+                    detail: 'Se recuerda a todos los inspectores verificar la carga de informes de visita antes del 15 de noviembre.',
+                    time: 'Hace 3 horas',
+                    read: false
+                },
+                {
+                    id: 'insp-3',
+                    type: 'observacion_status',
+                    category: 'observaciones',
+                    title: 'Nueva solicitud enviada pendiente de aprobación',
+                    user: 'Prof. Carlos Gutiérrez',
+                    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+                    course: 'Sistemas Operativos - INET',
+                    statusText: 'PENDIENTE',
+                    period: '20/10/2026 al 05/11/2026',
+                    time: 'Hace 1 día',
+                    read: true
+                }
+            ],
+            Estudiante: [
+                {
+                    id: 'est-1',
+                    type: 'tarea_calificada',
+                    category: 'tareas',
+                    title: 'Calificación publicada',
+                    user: 'Prof. Lucía Belén',
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+                    course: 'Desarrollo Web - CFE 2026',
+                    detail: 'Tu entrega "Trabajo Práctico N° 3" ha sido calificada: 11/12 (Excelente estructura CSS).',
+                    time: 'Hace 25 minutos',
+                    read: false
+                },
+                {
+                    id: 'est-2',
+                    type: 'tarea_nueva',
+                    category: 'tareas',
+                    title: 'Nueva actividad publicada',
+                    user: 'Prof. Lucía Belén',
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+                    course: 'Desarrollo Web - CFE 2026',
+                    detail: 'Se ha habilitado la tarea: "Diseño e Implementación de Maquetado HTML/Tailwind". Fecha límite: 28 de Octubre.',
+                    time: 'Hace 2 horas',
+                    read: false
+                },
+                {
+                    id: 'est-3',
+                    type: 'anuncio_curso',
+                    category: 'anuncios',
+                    title: 'Nuevo anuncio de la asignatura',
+                    user: 'Prof. Fernando Ramos',
+                    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+                    course: 'Sistemas Operativos - INET',
+                    detail: 'Recordatorio: Mañana tendremos la clase teórica en el Laboratorio 3 a las 14:00 hs.',
+                    time: 'Hace 1 día',
+                    read: true
+                }
+            ]
+        };
+
+        // INITIALIZATION
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAll();
+
+            // Toggle Quick Header Dropdown
+            const notifBtn = document.getElementById('notifDropdownToggle');
+            const dropdown = document.getElementById('quickNotifDropdown');
+
+            notifBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target) && !notifBtn.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        });
+
+        // SWITCH ROLE SIMULATOR
+        function switchRole(role) {
+            currentRole = role;
+            const nameEl = document.getElementById('headerUserName');
+            const roleEl = document.getElementById('headerUserRole');
+            const avatarEl = document.getElementById('userAvatar');
+            const navGestion = document.getElementById('navGestion');
+
+            if (role === 'Docente') {
+                nameEl.innerText = 'Lucía Belén';
+                roleEl.innerText = 'Docente - INET';
+                avatarEl.src = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150';
+                navGestion.classList.remove('hidden');
+            } else if (role === 'Inspector') {
+                nameEl.innerText = 'Insp. Roberto Silva';
+                roleEl.innerText = 'Inspector CFE';
+                avatarEl.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+                navGestion.classList.remove('hidden');
+            } else if (role === 'Estudiante') {
+                nameEl.innerText = 'Mateo Rossi';
+                roleEl.innerText = 'Estudiante - CFE 4°';
+                avatarEl.src = 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150';
+                navGestion.classList.add('hidden');
+            }
+
+            renderAll();
+            showToast(`Cambiado al rol: ${role}`);
+        }
+
+        // RENDER EVERYTHING
+        function renderAll() {
+            renderHeaderBadge();
+            renderQuickDropdown();
+            renderMainList();
+        }
+
+        // HEADER BADGE COUNTER
+        function renderHeaderBadge() {
+            const list = notifDatabase[currentRole];
+            const unreadCount = list.filter(n => !n.read).length;
+            const badge = document.getElementById('headerNotifBadge');
+
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // RENDER QUICK TOP DROPDOWN (5 items)
+        function renderQuickDropdown() {
+            const list = notifDatabase[currentRole].slice(0, 5);
+            const container = document.getElementById('quickNotifList');
+
+            if (list.length === 0) {
+                container.innerHTML = '<div class="p-4 text-center text-xs text-gray-400">Sin notificaciones</div>';
+                return;
+            }
+
+            container.innerHTML = list.map(item => `
+                <div onclick="markSingleRead('${item.id}')" class="p-3 hover:bg-gray-50 cursor-pointer transition flex items-start space-x-3 ${!item.read ? 'bg-blue-50/50' : ''}">
+                    <img src="${item.avatar}" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-gray-200">
+                    <div class="flex-grow min-w-0">
+                        <div class="flex justify-between items-baseline">
+                            <p class="text-xs font-bold text-gray-800 truncate">${item.title}</p>
+                            <span class="text-[10px] text-gray-400">${item.time}</span>
+                        </div>
+                        <p class="text-[11px] text-gray-600 truncate mt-0.5">${item.course || item.user}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // RENDER FULL MAIN NOTIFICATIONS
+        function renderMainList() {
+            const container = document.getElementById('fullNotifContainer');
+            let list = [...notifDatabase[currentRole]];
+
+            // Apply category filter
+            if (activeCategoryFilter !== 'todas') {
+                list = list.filter(n => n.category === activeCategoryFilter);
+            }
+
+            // Apply read status filter
+            if (activeStatusFilter === 'unread') {
+                list = list.filter(n => !n.read);
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl p-12 text-center text-gray-400 border border-gray-200">
+                        <i class="fa-regular fa-bell-slash text-4xl mb-3 text-gray-300"></i>
+                        <p class="text-sm font-medium">No se encontraron notificaciones en esta categoría.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = list.map(item => buildNotifCardHTML(item)).join('');
+        }
+
+        // BUILD HTML CARD BASED ON TYPE
+        function buildNotifCardHTML(item) {
+            const unreadStyle = !item.read ? 'bg-blue-50/30 border-l-4 border-l-crea-blue' : 'bg-white';
+
+            // SPECIAL DOCENTE: Observation Request Card
+            if (item.type === 'observacion_request') {
+                let actionArea = '';
+                if (obsRequestStatus === 'pending') {
+                    actionArea = `
+                        <div class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap items-center gap-2">
+                            <button onclick="respondObservation('autorizar')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-1.5 rounded-md shadow-sm transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-check"></i> Autorizar
+                            </button>
+                            <button onclick="respondObservation('rechazar')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-1.5 rounded-md shadow-sm transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-xmark"></i> Rechazar
+                            </button>
+                            <span class="text-[11px] text-gray-400 ml-auto">Requiere confirmación docente</span>
+                        </div>
+                    `;
+                } else if (obsRequestStatus === 'authorized') {
+                    actionArea = `
+                        <div class="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                <i class="fa-solid fa-circle-check mr-1.5"></i> Solicitud AUTORIZADA
+                            </span>
+                            <span class="text-xs text-gray-500">Acceso otorgado en modo observador</span>
+                        </div>
+                    `;
+                } else if (obsRequestStatus === 'rejected') {
+                    actionArea = `
+                        <div class="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
+                                <i class="fa-solid fa-circle-xmark mr-1.5"></i> Solicitud RECHAZADA
+                            </span>
+                            <span class="text-xs text-gray-500">Notificado al inspector</span>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="rounded-xl p-4 sm:p-5 border border-gray-200 shadow-sm transition ${unreadStyle}">
+                        <div class="flex items-start space-x-3 sm:space-x-4">
+                            <img src="${item.avatar}" class="w-10 h-10 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                            <div class="flex-grow min-w-0">
+                                <div class="flex flex-wrap items-center justify-between gap-1 mb-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">Solicitud de Inspección</span>
+                                        <span class="text-xs text-gray-400">• ${item.time}</span>
+                                    </div>
+                                    ${!item.read ? '<span class="w-2 h-2 rounded-full bg-crea-blue"></span>' : ''}
+                                </div>
+                                
+                                <h3 class="text-sm font-bold text-gray-800">${item.title}</h3>
+                                <p class="text-xs font-semibold text-gray-700 mt-0.5">${item.requester} <span class="font-normal text-gray-500">(${item.requesterRole})</span></p>
+
+                                <div class="mt-2.5 bg-gray-50 p-3 rounded-lg border border-gray-100 text-xs space-y-1 text-gray-700">
+                                    <p><strong class="text-gray-900">Aula/Curso:</strong> ${item.course}</p>
+                                    <p><strong class="text-gray-900">Motivo:</strong> ${item.reason}</p>
+                                    <p><strong class="text-gray-900">Período solicitado:</strong> <span class="text-crea-blue font-semibold">${item.period}</span></p>
+                                </div>
+
+                                ${actionArea}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // SPECIAL INSPECTOR: Observation Status Card
+            if (item.type === 'observacion_status') {
+                return `
+                    <div class="rounded-xl p-4 sm:p-5 border border-gray-200 shadow-sm transition ${unreadStyle}">
+                        <div class="flex items-start space-x-3 sm:space-x-4">
+                            <img src="${item.avatar}" class="w-10 h-10 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                            <div class="flex-grow min-w-0">
+                                <div class="flex justify-between items-baseline mb-1">
+                                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">Estado de Inspección</span>
+                                    <span class="text-xs text-gray-400">${item.time}</span>
+                                </div>
+                                <h3 class="text-sm font-bold text-gray-800">${item.title}</h3>
+                                <p class="text-xs text-gray-600 mt-1">La docente <strong>${item.user}</strong> ha responder la solicitud para el curso <span class="font-semibold text-gray-800">${item.course}</span>.</p>
+                                
+                                <div class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                        <i class="fa-solid fa-circle-check mr-1.5"></i> Estado: ${item.statusText}
+                                    </span>
+                                    <button onclick="simulatedNavigate('Aula Virtual - Modo Observador')" class="bg-crea-blue hover:bg-crea-hoverBlue text-white text-xs font-semibold px-3.5 py-1.5 rounded-md shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar al aula (Modo Observador)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // GENERIC NOTIFICATION CARDS
+            return `
+                <div class="rounded-xl p-4 sm:p-5 border border-gray-200 shadow-sm transition hover:border-gray-300 ${unreadStyle}">
+                    <div class="flex items-start space-x-3 sm:space-x-4">
+                        <img src="${item.avatar}" class="w-10 h-10 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                        <div class="flex-grow min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] font-semibold text-gray-500">${item.course || 'CREA ANEP'}</span>
+                                <span class="text-xs text-gray-400">${item.time}</span>
+                            </div>
+                            <h3 class="text-sm font-bold text-gray-800">${item.title}</h3>
+                            <p class="text-xs text-gray-600 mt-0.5">${item.detail || ''}</p>
+                            
+                            <div class="mt-2.5 flex items-center justify-between">
+                                <button onclick="simulatedNavigate('${item.title}')" class="text-xs text-crea-blue font-semibold hover:underline inline-flex items-center gap-1">
+                                    Ver detalle o recurso <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                </button>
+                                ${!item.read ? `<button onclick="markSingleRead('${item.id}')" class="text-[11px] text-gray-400 hover:text-gray-600">Marcar como leída</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // INTERACTIVE ACTIONS
+        function respondObservation(action) {
+            if (action === 'autorizar') {
+                obsRequestStatus = 'authorized';
+                showToast('Solicitud de observación AUTORIZADA correctamente.');
+            } else {
+                obsRequestStatus = 'rejected';
+                showToast('Solicitud RECHAZADA.');
+            }
+            renderMainList();
+        }
+
+        function markAllAsRead() {
+            notifDatabase[currentRole].forEach(n => n.read = true);
+            renderAll();
+            showToast('Todas las notificaciones marcadas como leídas.');
+        }
+
+        function markSingleRead(id) {
+            const item = notifDatabase[currentRole].find(n => n.id === id);
+            if (item) {
+                item.read = true;
+                renderAll();
+            }
+        }
+
+        function setCategoryFilter(category) {
+            activeCategoryFilter = category;
+            
+            // Update tab styles
+            ['todas', 'observaciones', 'tareas', 'anuncios'].forEach(cat => {
+                const btn = document.getElementById(`catTab-${cat}`);
+                if (btn) {
+                    if (cat === category) {
+                        btn.className = "px-3.5 py-2 text-xs font-semibold rounded-lg bg-crea-lightBlue text-crea-blue border border-blue-200 transition";
+                    } else {
+                        btn.className = "px-3.5 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition border border-transparent";
+                    }
+                }
+            });
+
+            renderMainList();
+        }
+
+        function setStatusFilter(status) {
+            activeStatusFilter = status;
+
+            const btnTodas = document.getElementById('statusBtn-todas');
+            const btnUnread = document.getElementById('statusBtn-unread');
+
+            if (status === 'todas') {
+                btnTodas.className = "px-2.5 py-1 text-xs font-semibold text-gray-700 bg-gray-200 rounded-md";
+                btnUnread.className = "px-2.5 py-1 text-xs font-medium text-gray-500 rounded-md hover:bg-gray-100";
+            } else {
+                btnUnread.className = "px-2.5 py-1 text-xs font-semibold text-gray-700 bg-gray-200 rounded-md";
+                btnTodas.className = "px-2.5 py-1 text-xs font-medium text-gray-500 rounded-md hover:bg-gray-100";
+            }
+
+            renderMainList();
+        }
+
+        function scrollToFullNotifs() {
+            document.getElementById('quickNotifDropdown').classList.add('hidden');
+            window.scrollTo({ top: 150, behavior: 'smooth' });
+        }
+
+        function simulatedNavigate(target) {
+            showToast(`Navegando hacia: "${target}"...`);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

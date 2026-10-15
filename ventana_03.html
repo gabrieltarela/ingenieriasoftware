@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CREA ANEP - Ventana 03: Mensajes</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        crea: {
+                            blue: '#0056b3',
+                            hoverBlue: '#004085',
+                            lightBlue: '#e6f0fa',
+                            darkHeader: '#1e293b',
+                            bg: '#f4f6f8',
+                            border: '#e2e8f0',
+                            accent: '#0284c7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f8;
+        }
+        /* Custom scrollbar for message thread */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen">
+
+    <!-- TOP NAVIGATION BAR (CREA / ANEP Style) -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Left Navigation Links & Logo -->
+                <div class="flex items-center space-x-6">
+                    <!-- Brand / Logo -->
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-crea-blue text-white font-bold px-2.5 py-1 rounded-md text-xl tracking-wider shadow-sm">
+                            ANEP
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 bg-blue-100 text-crea-blue rounded">CREA</span>
+                    </div>
+
+                    <!-- Navigation Links -->
+                    <nav class="hidden md:flex space-x-1 text-sm font-medium">
+                        <a href="#" class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition">Inicio</a>
+                        
+                        <!-- Cursos Dropdown -->
+                        <div class="relative group">
+                            <button class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition inline-flex items-center">
+                                Cursos <i class="fa-solid fa-chevron-down ml-1.5 text-xs text-gray-400"></i>
+                            </button>
+                            <div class="absolute left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg hidden group-hover:block py-1 z-50">
+                                <a href="#" class="block px-4 py-2 text-xs text-gray-700 hover:bg-crea-lightBlue hover:text-crea-blue font-medium">Didáctica III - INET 2026</a>
+                                <a href="#" class="block px-4 py-2 text-xs text-gray-700 hover:bg-crea-lightBlue hover:text-crea-blue font-medium">Informática Aplicada - CFE</a>
+                                <a href="#" class="block px-4 py-2 text-xs text-gray-700 hover:bg-crea-lightBlue hover:text-crea-blue font-medium">Práctica Docente 4° - Grupo A</a>
+                            </div>
+                        </div>
+
+                        <a href="#" class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition">Grupos</a>
+                        <a href="#" class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition">Recursos</a>
+                        <a href="#" class="px-3 py-2 text-gray-600 hover:text-crea-blue hover:bg-gray-50 rounded-md transition">Gestión</a>
+                    </nav>
+                </div>
+
+                <!-- Right Header Tools & Profile -->
+                <div class="flex items-center space-x-3">
+                    <!-- Search Input -->
+                    <div class="relative hidden sm:block w-44 md:w-56">
+                        <input type="text" placeholder="Buscar..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 border border-transparent rounded-full focus:bg-white focus:border-crea-blue focus:outline-none transition">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-gray-400"></i>
+                    </div>
+
+                    <!-- App Launcher Icon -->
+                    <button class="p-2 text-gray-500 hover:text-crea-blue hover:bg-gray-100 rounded-full transition" title="Aplicaciones Ceibal/ANEP">
+                        <i class="fa-solid fa-border-all text-base"></i>
+                    </button>
+
+                    <!-- Calendar Icon -->
+                    <button class="p-2 text-gray-500 hover:text-crea-blue hover:bg-gray-100 rounded-full transition" title="Calendario">
+                        <i class="fa-regular fa-calendar text-base"></i>
+                    </button>
+
+                    <!-- Messages Icon with Quick Dropdown -->
+                    <div class="relative">
+                        <button id="msgDropdownToggle" class="p-2 text-gray-600 hover:text-crea-blue hover:bg-gray-100 rounded-full transition relative">
+                            <i class="fa-regular fa-envelope text-lg"></i>
+                            <span id="unreadBadge" class="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center border-2 border-white">2</span>
+                        </button>
+
+                        <!-- Quick Messages Dropdown Menu -->
+                        <div id="quickMsgDropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                                <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Mensajes Recientes</h4>
+                                <button onclick="switchToInboxView()" class="text-xs text-crea-blue hover:underline font-medium">Ver todos</button>
+                            </div>
+                            <div class="divide-y divide-gray-100 max-h-80 overflow-y-auto" id="quickMsgList">
+                                <!-- Top 5 Recent Messages injected via JavaScript -->
+                            </div>
+                            <div class="p-2 bg-gray-50 text-center border-t border-gray-100">
+                                <button onclick="switchToInboxView()" class="w-full py-1.5 text-xs text-crea-blue font-semibold hover:bg-blue-50 rounded transition">
+                                    Ir a la vista completa de Mensajes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Icon -->
+                    <button class="p-2 text-gray-500 hover:text-crea-blue hover:bg-gray-100 rounded-full transition relative" title="Notificaciones">
+                        <i class="fa-regular fa-bell text-lg"></i>
+                        <span class="absolute top-1 right-1 bg-yellow-500 h-2 w-2 rounded-full ring-2 ring-white"></span>
+                    </button>
+
+                    <!-- User Avatar & Profile Dropdown -->
+                    <div class="flex items-center space-x-2 pl-2 border-l border-gray-200">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" alt="Lucía Belén" class="w-8 h-8 rounded-full object-cover ring-2 ring-crea-blue/30">
+                        <div class="hidden lg:block text-left">
+                            <span id="headerUserName" class="block text-xs font-semibold text-gray-800 leading-tight">Lucía Belén</span>
+                            <span id="headerUserRole" class="block text-[10px] text-gray-500 leading-tight">Docente - INET</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- TOP DEMO CONTROL BAR (Role Switcher for Mockup Testing) -->
+    <div class="bg-slate-800 text-white text-xs py-2 px-4 shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-sliders text-sky-400"></i>
+                <span class="font-medium text-slate-300">Simulador de Rol CREA:</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="roleSwitch" value="Docente" checked onchange="changeRole('Docente')" class="form-radio text-crea-blue focus:ring-0">
+                    <span class="ml-1 text-slate-200">Docente</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="roleSwitch" value="Estudiante" onchange="changeRole('Estudiante')" class="form-radio text-crea-blue focus:ring-0">
+                    <span class="ml-1 text-slate-200">Estudiante</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="radio" name="roleSwitch" value="Director/Inspector" onchange="changeRole('Director/Inspector')" class="form-radio text-crea-blue focus:ring-0">
+                    <span class="ml-1 text-slate-200">Inspector / Director</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Header Page Title & Primary Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 pb-4 border-b border-gray-200 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800 tracking-tight flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-crea-blue"></i> Mensajería Interna
+                </h1>
+                <p class="text-xs text-gray-500 mt-1">Plataforma de comunicación institucional ANEP / CFE - Montevideo</p>
+            </div>
+            <div>
+                <button onclick="openNewMsgModal()" class="bg-crea-blue hover:bg-crea-hoverBlue text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition inline-flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Redactar Nuevo Mensaje
+                </button>
+            </div>
+        </div>
+
+        <!-- FULL MESSAGES INTERFACE (Vista Completa) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[580px]">
+            
+            <!-- LEFT PANEL: Navigation Tabs & Threads List (Cols 4/12) -->
+            <div class="lg:col-span-5 xl:col-span-4 border-r border-gray-200 flex flex-col bg-gray-50/50">
+                
+                <!-- Folder Tabs -->
+                <div class="bg-white border-b border-gray-200 p-2 flex space-x-1">
+                    <button id="tabRecibidos" onclick="switchFolder('recibidos')" class="flex-1 py-2 text-xs font-medium rounded-md transition flex items-center justify-center gap-1.5 bg-crea-lightBlue text-crea-blue">
+                        <i class="fa-solid fa-inbox"></i> Recibidos
+                    </button>
+                    <button id="tabEnviados" onclick="switchFolder('enviados')" class="flex-1 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-md transition flex items-center justify-center gap-1.5 hover:bg-gray-100">
+                        <i class="fa-solid fa-paper-plane"></i> Enviados
+                    </button>
+                    <button id="tabInspeccion" onclick="switchFolder('inspeccion')" class="flex-1 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-md transition flex items-center justify-center gap-1.5 hover:bg-gray-100 relative">
+                        <i class="fa-solid fa-clipboard-check"></i> Inspección
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </button>
+                </div>
+
+                <!-- Search & Quick Filter inside Folder -->
+                <div class="p-3 bg-white border-b border-gray-200 flex gap-2">
+                    <div class="relative flex-grow">
+                        <input type="text" id="threadSearchInput" onkeyup="filterThreads()" placeholder="Buscar por remitente o asunto..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-md focus:bg-white focus:border-crea-blue focus:outline-none transition">
+                        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Message Threads List Container -->
+                <div id="threadsList" class="divide-y divide-gray-100 overflow-y-auto flex-grow max-h-[480px] custom-scrollbar">
+                    <!-- Threads populated dynamically -->
+                </div>
+
+            </div>
+
+            <!-- RIGHT PANEL: Selected Message Thread View / Conversation Detail (Cols 8/12) -->
+            <div class="lg:col-span-7 xl:col-span-8 flex flex-col bg-white">
+                
+                <!-- Thread Header -->
+                <div id="threadHeader" class="p-4 border-b border-gray-200 bg-white flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 id="activeSubject" class="text-base font-bold text-gray-800">Cargando asunto...</h2>
+                            <span id="activeContextTag" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-crea-blue border border-blue-100">Carga General</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            <span>Participantes:</span>
+                            <span id="activeParticipants" class="font-medium text-gray-700">Lucía Belén, Inspector Ramos</span>
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100" title="Imprimir hilo">
+                            <i class="fa-solid fa-print text-sm"></i>
+                        </button>
+                        <button class="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50" title="Eliminar hilo">
+                            <i class="fa-regular fa-trash-can text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Conversation Messages Scroll Area -->
+                <div id="messagesContainer" class="flex-grow p-4 space-y-4 overflow-y-auto max-h-[380px] custom-scrollbar bg-slate-50/40">
+                    <!-- Dynamic Messages inside active thread -->
+                </div>
+
+                <!-- Reply Box / Message Composer -->
+                <div class="p-3 border-t border-gray-200 bg-white">
+                    <form id="replyForm" onsubmit="handleSendReply(event)" class="space-y-2">
+                        <div class="relative">
+                            <textarea id="replyInput" rows="3" required placeholder="Escriba su respuesta aquí..." class="w-full p-2.5 text-xs text-gray-800 border border-gray-200 rounded-lg focus:border-crea-blue focus:ring-1 focus:ring-crea-blue focus:outline-none transition resize-none"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <!-- Attachment actions -->
+                            <div class="flex items-center space-x-1">
+                                <button type="button" class="p-1.5 text-gray-500 hover:text-crea-blue hover:bg-gray-100 rounded-md transition text-xs flex items-center gap-1">
+                                    <i class="fa-solid fa-paperclip text-sm"></i> <span class="hidden sm:inline">Adjuntar</span>
+                                </button>
+                                <button type="button" class="p-1.5 text-gray-500 hover:text-crea-blue hover:bg-gray-100 rounded-md transition text-xs flex items-center gap-1">
+                                    <i class="fa-brands fa-google-drive text-sm"></i> <span class="hidden sm:inline">Recurso CREA</span>
+                                </button>
+                            </div>
+
+                            <!-- Submit button -->
+                            <button type="submit" class="bg-crea-blue hover:bg-crea-hoverBlue text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-paper-plane"></i> Responder
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- NEW MESSAGE MODAL -->
+    <div id="newMsgModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200">
+            <!-- Modal Header -->
+            <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane text-crea-blue"></i> Redactar Nuevo Mensaje
+                </h3>
+                <button onclick="closeNewMsgModal()" class="text-gray-400 hover:text-gray-600 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form -->
+            <form onsubmit="handleSendNewMessage(event)" class="p-5 space-y-4">
+                <!-- Recipient Type / Category -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Destinatario:</label>
+                    <select id="modalRecipient" required class="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:border-crea-blue focus:outline-none">
+                        <option value="">Seleccione grupo o rol...</option>
+                        <option value="Docentes Didáctica III">Docentes Didáctica III - INET</option>
+                        <option value="Estudiantes Grupo 4°A">Estudiantes - Grupo 4°A Informática</option>
+                        <option value="Inspector Prof. Fernando Ramos">Inspección - Prof. Fernando Ramos</option>
+                        <option value="Dirección Campus Regional">Dirección Campus Regional ANEP</option>
+                    </select>
+                </div>
+
+                <!-- Subject -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Asunto:</label>
+                    <input type="text" id="modalSubject" required placeholder="Ej: Consulta sobre plan de clase o entrega de evaluación" class="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:border-crea-blue focus:outline-none">
+                </div>
+
+                <!-- Message Text -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Cuerpo del mensaje:</label>
+                    <textarea id="modalBody" rows="4" required placeholder="Escriba el detalle de su comunicación institucional..." class="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:border-crea-blue focus:outline-none resize-none"></textarea>
+                </div>
+
+                <!-- Attachments placeholder -->
+                <div class="flex items-center space-x-2 pt-1">
+                    <button type="button" class="text-xs text-gray-600 hover:text-crea-blue border border-gray-200 px-2.5 py-1.5 rounded flex items-center gap-1">
+                        <i class="fa-solid fa-paperclip"></i> Adjuntar archivo
+                    </button>
+                    <span class="text-[10px] text-gray-400">PDF, DOCX, PNG (máx. 10MB)</span>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                    <button type="button" onclick="closeNewMsgModal()" class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-crea-blue hover:bg-crea-hoverBlue rounded-md shadow-sm transition">
+                        Enviar Mensaje
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-gray-200 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500">
+            <p>Administración Nacional de Educación Pública (ANEP) - Consejo de Formación en Educación (CFE) | Uruguay</p>
+            <p class="mt-1 text-[11px] text-gray-400">Entorno Virtual de Aprendizaje CREA 2026 - Vista de demostración interactiva</p>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE SCRIPTING -->
+    <script>
+        // DATA MODEL FOR MESSAGES & THREADS
+        let currentFolder = 'recibidos';
+        let activeThreadId = 1;
+        let currentUserRole = 'Docente'; // Docente, Estudiante, Director/Inspector
+
+        // Sample initial datasets for CREA threads
+        const initialThreads = [
+            {
+                id: 1,
+                folder: 'recibidos',
+                senderName: 'Prof. Fernando Ramos',
+                senderRole: 'Inspector Técnico CFE',
+                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+                subject: 'Devolución Observación Didáctica III',
+                date: 'Hoy, 10:45 AM',
+                unread: true,
+                context: 'Inspección',
+                messages: [
+                    {
+                        id: 101,
+                        sender: 'Prof. Fernando Ramos',
+                        role: 'Inspector Técnico',
+                        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+                        time: 'Hoy, 10:45 AM',
+                        text: 'Estimada Lucía, he revisado la planificación enviada para la clase de Práctica Docente en INET. Las competencias transversales están bien estructuradas. Por favor confirma la fecha de visita presencial.',
+                        isMine: false
+                    }
+                ]
+            },
+            {
+                id: 2,
+                folder: 'recibidos',
+                senderName: 'Martín Silva',
+                senderRole: 'Estudiante - 4°A INET',
+                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+                subject: 'Consulta sobre entrega de Trabajo Final',
+                date: 'Ayer, 16:20 PM',
+                unread: true,
+                context: 'Informática Aplicada',
+                messages: [
+                    {
+                        id: 201,
+                        sender: 'Martín Silva',
+                        role: 'Estudiante',
+                        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+                        time: 'Ayer, 16:20 PM',
+                        text: 'Buenas tardes profesora. Quería consultar si el formato de entrega de la propuesta pedagógica debe subirse en PDF o podemos adjuntar el enlace al repositorio de GitHub directamente.',
+                        isMine: false
+                    }
+                ]
+            },
+            {
+                id: 3,
+                folder: 'recibidos',
+                senderName: 'Lic. Mariana Fernández',
+                senderRole: 'Coordinación Pedagógica INET',
+                avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
+                subject: 'Reunión Sala de Docentes - Noviembre',
+                date: '14 Oct, 09:15 AM',
+                unread: false,
+                context: 'Institucional',
+                messages: [
+                    {
+                        id: 301,
+                        sender: 'Lic. Mariana Fernández',
+                        role: 'Coordinadora',
+                        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
+                        time: '14 Oct, 09:15 AM',
+                        text: 'Se convoca a todos los docentes de la carrera a la reunión de evaluación del 2do semestre este viernes a las 18:00hs vía Teams.',
+                        isMine: false
+                    }
+                ]
+            },
+            {
+                id: 4,
+                folder: 'enviados',
+                senderName: 'Para: Dirección INET',
+                senderRole: 'Gestión Académica',
+                avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150',
+                subject: 'Solicitud de Cañón Multimedia para Laboratorio 2',
+                date: '12 Oct, 11:30 AM',
+                unread: false,
+                context: 'Recursos',
+                messages: [
+                    {
+                        id: 401,
+                        sender: 'Lucía Belén (Tú)',
+                        role: 'Docente',
+                        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+                        time: '12 Oct, 11:30 AM',
+                        text: 'Estimados, solicito reservar el proyector para la clase abierta de Didáctica el próximo martes en el horario de 14 a 16 hs.',
+                        isMine: true
+                    }
+                ]
+            },
+            {
+                id: 5,
+                folder: 'inspeccion',
+                senderName: 'Inspección CFE - Docencia',
+                senderRole: 'Órgano de Inspección',
+                avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+                subject: 'Informe Anual de Acreditación de Saberes',
+                date: '10 Oct, 14:00 PM',
+                unread: false,
+                context: 'Inspección',
+                messages: [
+                    {
+                        id: 501,
+                        sender: 'Inspección CFE',
+                        role: 'Inspector Auditor',
+                        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+                        time: '10 Oct, 14:00 PM',
+                        text: 'Se adjunta la pauta oficial para la evaluación del portafolio docente 2026. Revisar requisitos antes de la fecha límite.',
+                        isMine: false
+                    }
+                ]
+            }
+        ];
+
+        let threads = [...initialThreads];
+
+        // RENDER INITIAL DATA ON LOAD
+        document.addEventListener('DOMContentLoaded', () => {
+            renderQuickDropdown();
+            renderThreadsList();
+            renderActiveThreadDetails();
+
+            // Quick dropdown toggle handling
+            const dropdownBtn = document.getElementById('msgDropdownToggle');
+            const dropdownMenu = document.getElementById('quickMsgDropdown');
+
+            dropdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!dropdownMenu.contains(e.target) && !dropdownBtn.contains(e.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+        });
+
+        // ROLE SWITCHER LOGIC
+        function changeRole(role) {
+            currentUserRole = role;
+            const headerRole = document.getElementById('headerUserRole');
+            const headerName = document.getElementById('headerUserName');
+            const tabInspeccion = document.getElementById('tabInspeccion');
+
+            if (role === 'Docente') {
+                headerName.innerText = 'Lucía Belén';
+                headerRole.innerText = 'Docente - INET';
+                tabInspeccion.classList.remove('hidden');
+            } else if (role === 'Estudiante') {
+                headerName.innerText = 'Joaquín Pereyra';
+                headerRole.innerText = 'Estudiante - CFE 4°';
+                tabInspeccion.classList.add('hidden');
+                if (currentFolder === 'inspeccion') switchFolder('recibidos');
+            } else if (role === 'Director/Inspector') {
+                headerName.innerText = 'Prof. Fernando Ramos';
+                headerRole.innerText = 'Inspector CFE';
+                tabInspeccion.classList.remove('hidden');
+            }
+
+            renderThreadsList();
+        }
+
+        // FOLDER SWITCHING (Recibidos, Enviados, Inspección)
+        function switchFolder(folderName) {
+            currentFolder = folderName;
+            
+            // Update UI tab styles
+            ['recibidos', 'enviados', 'inspeccion'].forEach(f => {
+                const btn = document.getElementById('tab' + f.charAt(0).toUpperCase() + f.slice(1));
+                if (btn) {
+                    if (f === folderName) {
+                        btn.className = "flex-1 py-2 text-xs font-semibold rounded-md transition flex items-center justify-center gap-1.5 bg-crea-lightBlue text-crea-blue shadow-sm";
+                    } else {
+                        btn.className = "flex-1 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 rounded-md transition flex items-center justify-center gap-1.5 hover:bg-gray-100";
+                    }
+                }
+            });
+
+            renderThreadsList();
+
+            // Auto-select first thread in folder if available
+            const folderThreads = threads.filter(t => t.folder === currentFolder);
+            if (folderThreads.length > 0) {
+                activeThreadId = folderThreads[0].id;
+                renderActiveThreadDetails();
+            }
+        }
+
+        // RENDER TOP HEADER DROPDOWN (5 Most Recent Messages)
+        function renderQuickDropdown() {
+            const listContainer = document.getElementById('quickMsgList');
+            const recent = threads.slice(0, 5);
+
+            listContainer.innerHTML = recent.map(msg => `
+                <div onclick="selectThreadFromQuick(${msg.id})" class="p-3 hover:bg-gray-50 cursor-pointer transition flex items-start space-x-3 ${msg.unread ? 'bg-blue-50/40' : ''}">
+                    <img src="${msg.avatar}" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-gray-200">
+                    <div class="flex-grow min-w-0">
+                        <div class="flex justify-between items-baseline">
+                            <h5 class="text-xs font-bold text-gray-800 truncate">${msg.senderName}</h5>
+                            <span class="text-[10px] text-gray-400">${msg.date}</span>
+                        </div>
+                        <p class="text-xs text-gray-600 truncate font-medium">${msg.subject}</p>
+                        <p class="text-[11px] text-gray-500 truncate mt-0.5">${msg.messages[msg.messages.length - 1].text}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectThreadFromQuick(id) {
+            document.getElementById('quickMsgDropdown').classList.add('hidden');
+            const thread = threads.find(t => t.id === id);
+            if (thread) {
+                switchFolder(thread.folder);
+                activeThreadId = id;
+                thread.unread = false;
+                updateUnreadBadge();
+                renderThreadsList();
+                renderActiveThreadDetails();
+            }
+        }
+
+        function switchToInboxView() {
+            document.getElementById('quickMsgDropdown').classList.add('hidden');
+            switchFolder('recibidos');
+        }
+
+        // RENDER THREADS LIST IN LEFT PANEL
+        function renderThreadsList() {
+            const listContainer = document.getElementById('threadsList');
+            const folderThreads = threads.filter(t => t.folder === currentFolder);
+
+            if (folderThreads.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="p-8 text-center text-gray-400">
+                        <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
+                        <p class="text-xs">No hay mensajes en esta carpeta.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = folderThreads.map(t => {
+                const isSelected = t.id === activeThreadId;
+                const lastMsg = t.messages[t.messages.length - 1];
+                return `
+                    <div onclick="selectThread(${t.id})" class="p-3.5 cursor-pointer transition relative border-l-4 ${isSelected ? 'bg-white border-crea-blue shadow-sm' : 'border-transparent hover:bg-gray-100/70'}">
+                        <div class="flex items-start space-x-3">
+                            <img src="${t.avatar}" class="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-gray-200">
+                            <div class="flex-grow min-w-0">
+                                <div class="flex justify-between items-baseline mb-0.5">
+                                    <h4 class="text-xs font-bold ${t.unread ? 'text-crea-blue' : 'text-gray-800'} truncate">${t.senderName}</h4>
+                                    <span class="text-[10px] text-gray-400">${t.date}</span>
+                                </div>
+                                <h5 class="text-xs font-semibold text-gray-700 truncate">${t.subject}</h5>
+                                <p class="text-[11px] text-gray-500 truncate mt-1">${lastMsg.text}</p>
+                            </div>
+                        </div>
+                        ${t.unread ? '<span class="absolute top-3.5 right-3 w-2 h-2 rounded-full bg-crea-blue"></span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectThread(id) {
+            activeThreadId = id;
+            const thread = threads.find(t => t.id === id);
+            if (thread) {
+                thread.unread = false;
+                updateUnreadBadge();
+            }
+            renderThreadsList();
+            renderActiveThreadDetails();
+        }
+
+        // RENDER ACTIVE THREAD DETAIL (RIGHT PANEL)
+        function renderActiveThreadDetails() {
+            const thread = threads.find(t => t.id === activeThreadId);
+            const container = document.getElementById('messagesContainer');
+
+            if (!thread) {
+                container.innerHTML = '<div class="p-6 text-center text-gray-400 text-xs">Seleccione un mensaje para ver la conversación.</div>';
+                return;
+            }
+
+            // Update Header Information
+            document.getElementById('activeSubject').innerText = thread.subject;
+            document.getElementById('activeContextTag').innerText = thread.context || 'General';
+            document.getElementById('activeParticipants').innerText = `${thread.senderName}, Lucía Belén`;
+
+            // Render Message Bubble Stream
+            container.innerHTML = thread.messages.map(m => `
+                <div class="flex flex-col ${m.isMine ? 'items-end' : 'items-start'}">
+                    <div class="flex items-end space-x-2 max-w-[85%] ${m.isMine ? 'flex-row-reverse space-x-reverse' : ''}">
+                        <img src="${m.avatar}" class="w-7 h-7 rounded-full object-cover mb-1 border border-gray-200">
+                        <div>
+                            <div class="text-[10px] text-gray-400 mb-1 px-1 ${m.isMine ? 'text-right' : 'text-left'}">
+                                <span class="font-medium text-gray-600">${m.sender}</span> • ${m.time}
+                            </div>
+                            <div class="p-3.5 rounded-2xl text-xs leading-relaxed ${
+                                m.isMine 
+                                ? 'bg-crea-blue text-white rounded-br-none shadow-sm' 
+                                : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-sm'
+                            }">
+                                ${m.text}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // HANDLE SEND REPLY
+        function handleSendReply(e) {
+            e.preventDefault();
+            const input = document.getElementById('replyInput');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            const thread = threads.find(t => t.id === activeThreadId);
+            if (thread) {
+                thread.messages.push({
+                    id: Date.now(),
+                    sender: 'Lucía Belén (Tú)',
+                    role: currentUserRole,
+                    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+                    time: 'Ahora mismo',
+                    text: text,
+                    isMine: true
+                });
+
+                input.value = '';
+                renderActiveThreadDetails();
+                renderThreadsList();
+                renderQuickDropdown();
+            }
+        }
+
+        // FILTER THREADS SEARCH
+        function filterThreads() {
+            const query = document.getElementById('threadSearchInput').value.toLowerCase();
+            const threadElements = document.querySelectorAll('#threadsList > div');
+            
+            threads.forEach((t, index) => {
+                if (t.folder === currentFolder) {
+                    const match = t.senderName.toLowerCase().includes(query) || t.subject.toLowerCase().includes(query);
+                    // Hide/Show matching elements dynamically
+                }
+            });
+        }
+
+        // UNREAD COUNTER BADGE UPDATER
+        function updateUnreadBadge() {
+            const unreadCount = threads.filter(t => t.unread).length;
+            const badge = document.getElementById('unreadBadge');
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // NEW MESSAGE MODAL CONTROLS
+        function openNewMsgModal() {
+            document.getElementById('newMsgModal').classList.remove('hidden');
+        }
+
+        function closeNewMsgModal() {
+            document.getElementById('newMsgModal').classList.add('hidden');
+        }
+
+        function handleSendNewMessage(e) {
+            e.preventDefault();
+            const recipient = document.getElementById('modalRecipient').value;
+            const subject = document.getElementById('modalSubject').value;
+            const body = document.getElementById('modalBody').value;
+
+            const newThread = {
+                id: Date.now(),
+                folder: 'enviados',
+                senderName: `Para: ${recipient}`,
+                senderRole: 'Destinatario ANEP',
+                avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+                subject: subject,
+                date: 'Ahora mismo',
+                unread: false,
+                context: 'Comunicación Interna',
+                messages: [
+                    {
+                        id: Date.now() + 1,
+                        sender: 'Lucía Belén (Tú)',
+                        role: currentUserRole,
+                        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+                        time: 'Ahora mismo',
+                        text: body,
+                        isMine: true
+                    }
+                ]
+            };
+
+            threads.unshift(newThread);
+            closeNewMsgModal();
+            switchFolder('enviados');
+            activeThreadId = newThread.id;
+            renderActiveThreadDetails();
+            renderQuickDropdown();
+
+            // Clear inputs
+            document.getElementById('modalSubject').value = '';
+            document.getElementById('modalBody').value = '';
+        }
+    </script>
+</body>
+</html>

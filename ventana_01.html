@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión - Plataforma Educativa ANEP</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        anepBlue: '#004B87',
+                        anepLightBlue: '#0072CE',
+                        anepDark: '#1E293B',
+                        anepGray: '#F1F5F9',
+                        anepAccent: '#0284C7'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-100 font-sans min-h-screen flex flex-col justify-between text-slate-800">
+
+    <!-- Header Institucional Fijo (Inspirado en CREA / ANEP) -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <!-- Logotipo simulado ANEP -->
+                <div class="flex items-center space-x-2">
+                    <div class="bg-anepBlue text-white p-2 rounded-lg font-bold tracking-wider flex items-center shadow-sm">
+                        <i class="fa-solid fa-graduation-cap text-lg mr-1.5"></i>
+                        <span class="text-sm tracking-widest">ANEP</span>
+                    </div>
+                    <div class="hidden sm:block border-l border-slate-300 pl-3">
+                        <span class="text-xs font-semibold text-slate-600 block uppercase tracking-wider">Administración Nacional</span>
+                        <span class="text-xs text-slate-500 block">de Educación Pública</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleSessionAlert()" class="text-xs bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-md font-medium transition flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Simular Sesión Vencida
+                </button>
+                <a href="#" class="text-sm text-anepBlue hover:underline font-medium hidden md:inline-block">Ayuda y Soporte</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Alerta de sesión vencida (Opcional interactiva) -->
+    <div id="sessionAlertBanner" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 max-w-xl mx-auto mt-6 rounded-r-lg shadow-sm w-full px-4 animate-pulse">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fa-solid fa-circle-exclamation text-amber-500 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-amber-800 font-medium">
+                    Su sesión ha vencido o intentó acceder a un recurso protegido. Por favor, ingrese nuevamente para continuar.
+                </p>
+            </div>
+            <div class="ml-auto pl-3">
+                <button onclick="document.getElementById('sessionAlertBanner').classList.add('hidden')" class="text-amber-500 hover:text-amber-700">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Principal: Recuadro de Inicio de Sesión -->
+    <main class="flex-grow flex items-center justify-center px-4 py-10">
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden transition-all duration-300">
+            
+            <!-- Cabecera de la tarjeta -->
+            <div class="bg-gradient-to-r from-anepBlue to-anepLightBlue px-6 py-8 text-white text-center relative">
+                <div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white p-3 rounded-full shadow-md border border-slate-100">
+                    <i class="fa-solid fa-user-lock text-anepBlue text-2xl"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight mt-2">Plataforma Educativa</h1>
+                <p class="text-xs text-sky-100 mt-1 uppercase tracking-wider font-medium">Acceso Único Institucional</p>
+            </div>
+
+            <!-- Cuerpo del formulario -->
+            <div class="px-6 pt-10 pb-8 space-y-6">
+
+                <!-- 1. Botón de Autenticación Institucional Google -->
+                <div>
+                    <button type="button" onclick="handleGoogleLogin()" class="w-full flex items-center justify-center px-4 py-3 border border-slate-300 rounded-xl shadow-sm bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-anepLightBlue transition group">
+                        <svg class="h-5 w-5 mr-3" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span class="group-hover:text-slate-900">Ingresar con cuenta Google institucional</span>
+                    </button>
+                    <p class="text-[11px] text-slate-500 text-center mt-1.5">(@dgeip.edu.uy / @inet.edu.uy / @cerp / etc.)</p>
+                </div>
+
+                <!-- 2. Barra o separador con texto indicativo -->
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="flex-shrink mx-4 text-xs font-medium text-slate-400 uppercase tracking-wider">o ingresá con el método tradicional</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <!-- 3. Campos de usuario y contraseña (Método tradicional) -->
+                <form id="traditionalLoginForm" onsubmit="handleTraditionalLogin(event)" class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                            Usuario / Cédula / Email Institucional
+                        </label>
+                        <div class="relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-regular fa-user text-sm"></i>
+                            </div>
+                            <input type="text" id="username" required placeholder="Ej. 4.123.456-7 o usuario"
+                                class="block w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-anepLightBlue focus:border-anepLightBlue bg-slate-50/50">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                                Contraseña
+                            </label>
+                            <a href="#" class="text-xs text-anepLightBlue hover:underline font-medium">¿Olvidaste tu contraseña?</a>
+                        </div>
+                        <div class="relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-lock text-sm"></i>
+                            </div>
+                            <input type="password" id="password" required placeholder="••••••••"
+                                class="block w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-anepLightBlue focus:border-anepLightBlue bg-slate-50/50">
+                        </div>
+                    </div>
+
+                    <!-- Botón "Ingresar" -->
+                    <button type="submit" id="submitBtn" class="w-full mt-2 py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-semibold text-white bg-anepBlue hover:bg-anepLightBlue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-anepLightBlue transition flex items-center justify-center">
+                        <span id="btnText">Ingresar a la plataforma</span>
+                        <i id="btnSpinner" class="fa-solid fa-circle-notch fa-spin ml-2 hidden"></i>
+                    </button>
+                </form>
+
+            </div>
+
+            <!-- Footer interno de la tarjeta -->
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 text-center">
+                <p class="text-xs text-slate-500">
+                    Sistema compatible con perfiles: Docente, Estudiante, Director e Inspector.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Pie de página institucional -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        <p>Dirección Nacional de Educación / ANEP — Uruguay &copy; 2026. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Modal de notificación / Simulación de éxito -->
+    <div id="successModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 px-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 transform transition-all">
+            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800">¡Autenticación Exitosa!</h3>
+            <p class="text-xs text-slate-600 mt-2">
+                Credenciales verificadas correctamente. Redirigiendo a la <span class="font-semibold text-anepBlue">Ventana 02 (Inicio / Muro de Actividad)</span>...
+            </p>
+            <div class="mt-6">
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div id="progressBar" class="bg-emerald-500 h-full w-0 transition-all duration-1000"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Interactividad Mockup -->
+    <script>
+        // Alternar banner de sesión vencida para demostrar el requisito del cliente
+        function toggleSessionAlert() {
+            const banner = document.getElementById('sessionAlertBanner');
+            banner.classList.toggle('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Simular clic en Google Login
+        function handleGoogleLogin() {
+            const btn = event.currentTarget;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Conectando con Google Institucional...`;
+            setTimeout(() => {
+                triggerSuccessSimulation();
+            }, 1200);
+        }
+
+        // Simular formulario tradicional
+        function handleTraditionalLogin(event) {
+            event.preventDefault();
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const submitBtn = document.getElementById('submitBtn');
+
+            btnText.textContent = "Verificando credenciales...";
+            btnSpinner.classList.remove('hidden');
+            submitBtn.disabled = true;
+
+            setTimeout(() => {
+                triggerSuccessSimulation();
+            }, 1500);
+        }
+
+        // Simular redirección exitosa
+        function triggerSuccessSimulation() {
+            const modal = document.getElementById('successModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            setTimeout(() => {
+                document.getElementById('progressBar').style.width = '100%';
+            }, 100);
+
+            setTimeout(() => {
+                // Simulación completada con éxito
+                alert("Simulación de la Ventana 01 completada con éxito. En el prototipo final, esto redirige a la Ventana 02 (Inicio).");
+                location.reload();
+            }, 1800);
+        }
+    </script>
+</body>
+</html>

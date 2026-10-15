@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ventana 07 - Autoevaluación y Coevaluación | Plataforma ANEP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --anep-blue: #0056b3;
+      --anep-dark-blue: #003366;
+      --anep-light-bg: #f4f6f8;
+      --crea-border: #dee2e6;
+    }
+
+    body {
+      background-color: var(--anep-light-bg);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+      padding-bottom: 40px;
+    }
+
+    /* Barra Superior de Simulación de Rol / Opciones */
+    .role-switcher-bar {
+      background: #212529;
+      color: #fff;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Navbar principal estilo CREA/ANEP */
+    .navbar-anep {
+      background-color: #ffffff;
+      border-bottom: 2px solid var(--anep-blue);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 6px 16px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+      color: var(--anep-blue);
+      text-decoration: none;
+      font-size: 1.25rem;
+    }
+
+    .brand-badge {
+      background-color: #0080ff;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .nav-link-crea {
+      color: #495057;
+      font-weight: 500;
+      padding: 8px 12px !important;
+    }
+
+    .nav-link-crea:hover {
+      color: var(--anep-blue);
+    }
+
+    /* Cabezal de la Ventana */
+    .eval-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--crea-border);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .eval-title {
+      color: #212529;
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin-bottom: 5px;
+    }
+
+    /* Tarjetas de Contenido */
+    .content-card {
+      background: white;
+      border: 1px solid var(--crea-border);
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    /* Tarjeta de Criterio de Rúbrica */
+    .criterion-card {
+      border: 1px solid var(--crea-border);
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: #fafbfc;
+    }
+
+    .level-option {
+      border: 2px solid #dee2e6;
+      border-radius: 6px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+      height: 100%;
+    }
+
+    .level-option:hover {
+      border-color: var(--anep-blue);
+      background-color: #f0f7ff;
+    }
+
+    .level-option.selected {
+      border-color: var(--anep-blue);
+      background-color: #e7f1ff;
+      box-shadow: 0 0 0 1px var(--anep-blue);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de Control para Demo / Evaluación de la Ventana 07 -->
+  <div class="role-switcher-bar">
+    <div>
+      <i class="bi bi-sliders me-2"></i><strong>Modo de Simulación (Ventana 07):</strong>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label for="evalTypeSelect" class="form-label mb-0 text-white me-1">Modalidad:</label>
+      <select id="evalTypeSelect" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="updateEvalMode()">
+        <option value="autoevaluacion" selected>Autoevaluación (Tu propia entrega)</option>
+        <option value="coevaluacion">Coevaluación (Entrega de compañero - Anónima)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Barra Superior ANEP / CREA -->
+  <nav class="navbar navbar-expand-lg navbar-anep">
+    <div class="container-fluid">
+      <a class="brand-logo" href="#">
+        <span class="brand-badge">PANEP</span>
+        <span style="font-size: 1rem; color: #003366;">ANEP</span>
+      </a>
+      <div class="collapse navbar-collapse ms-4">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item"><a class="nav-link nav-link-crea" href="#">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link nav-link-crea fw-bold text-primary" href="#">Cursos</a></li>
+          <li class="nav-item"><a class="nav-link nav-link-crea" href="#">Grupos</a></li>
+          <li class="nav-item"><a class="nav-link nav-link-crea" href="#">Recursos</a></li>
+        </ul>
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-search text-secondary" style="cursor: pointer;"></i>
+          <i class="bi bi-calendar3 text-secondary" style="cursor: pointer;"></i>
+          <i class="bi bi-envelope text-secondary" style="cursor: pointer;"></i>
+          <i class="bi bi-bell text-secondary" style="cursor: pointer;"></i>
+          <div class="d-flex align-items-center gap-2 border-start ps-3">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" class="rounded-circle" width="32" height="32" alt="Avatar">
+            <span class="small fw-semibold">Sofia Alvarez</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Cabezal -->
+  <div class="eval-header">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <div class="text-muted small mb-1"><i class="bi bi-journal-check me-1"></i> DIDÁCTICA PRÁCTICA DOCENTE II</div>
+          <h1 class="eval-title" id="evalMainTitle">Autoevaluación: Actividad 3 (Tu propia entrega)</h1>
+        </div>
+        <div>
+          <span class="badge bg-warning text-dark fs-6 px-3 py-2" id="anonymousNoticeBadge">
+            <i class="bi bi-shield-lock-fill me-1"></i> Tu identidad no será visible
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido Central: Criterios de la Rúbrica -->
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        
+        <div class="content-card">
+          <p class="text-muted small mb-4">Por favor, evalúa cada uno de los siguientes criterios seleccionando el nivel de logro correspondiente y añadiendo un comentario opcional si lo deseas.</p>
+
+          <!-- BLOQUE CRITERIO 1 -->
+          <div class="criterion-card">
+            <h6 class="fw-bold text-primary mb-2">Criterio 1: Fundamentación y Secuenciación Didáctica</h6>
+            <p class="small text-muted mb-3">Evalúa la coherencia de la secuencia y su vinculación con la teoría pedagógica.</p>
+            
+            <div class="row g-2 mb-3">
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(1, this)">
+                  <div class="fw-bold small text-dark">Insuficiente (1-2 pts)</div>
+                  <div class="small text-muted mt-1">Secuencia confusa sin articulación clara con la teoría.</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(1, this)">
+                  <div class="fw-bold small text-dark">Bueno (3-4 pts)</div>
+                  <div class="small text-muted mt-1">Secuencia clara con fundamentación básica aceptable.</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(1, this)">
+                  <div class="fw-bold small text-dark">Excelente (5 pts)</div>
+                  <div class="small text-muted mt-1">Excelente fundamentación articulada profundamente con la didáctica.</div>
+                </div>
+              </div>
+            </div>
+
+            <input type="text" class="form-control form-control-sm" placeholder="Comentario opcional sobre este criterio...">
+          </div>
+
+          <!-- BLOQUE CRITERIO 2 -->
+          <div class="criterion-card">
+            <h6 class="fw-bold text-primary mb-2">Criterio 2: Instrumentos y Propuesta de Evaluación</h6>
+            <p class="small text-muted mb-3">Evalúa la pertinencia de los instrumentos de evaluación propuestos en el trabajo.</p>
+            
+            <div class="row g-2 mb-3">
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(2, this)">
+                  <div class="fw-bold small text-dark">Insuficiente (1-2 pts)</div>
+                  <div class="small text-muted mt-1">No especifica instrumentos claros ni criterios.</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(2, this)">
+                  <div class="fw-bold small text-dark">Bueno (3-4 pts)</div>
+                  <div class="small text-muted mt-1">Incluye instrumentos básicos o rúbricas simples.</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(2, this)">
+                  <div class="fw-bold small text-dark">Excelente (5 pts)</div>
+                  <div class="small text-muted mt-1">Instrumentos variados y perfectamente alineados a las competencias.</div>
+                </div>
+              </div>
+            </div>
+
+            <input type="text" class="form-control form-control-sm" placeholder="Comentario opcional sobre este criterio...">
+          </div>
+
+          <!-- BLOQUE CRITERIO 3 -->
+          <div class="criterion-card">
+            <h6 class="fw-bold text-primary mb-2">Criterio 3: Claridad y Presentación del Material</h6>
+            <p class="small text-muted mb-3">Evalúa la redacción, formato y calidad general de la entrega realizada.</p>
+            
+            <div class="row g-2 mb-3">
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(3, this)">
+                  <div class="fw-bold small text-dark">Insuficiente (1-2 pts)</div>
+                  <div class="small text-muted mt-1">Presenta múltiples errores de formato y redacción.</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(3, this)">
+                  <div class="fw-bold small text-dark">Bueno (3-4 pts)</div>
+                  <div class="small text-muted mt-1">Presentación ordenada y correcta en general.</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="level-option" onclick="selectLevel(3, this)">
+                  <div class="fw-bold small text-dark">Excelente (5 pts)</div>
+                  <div class="small text-muted mt-1">Presentación impecable, profesional y excelente redacción.</div>
+                </div>
+              </div>
+            </div>
+
+            <input type="text" class="form-control form-control-sm" placeholder="Comentario opcional sobre este criterio...">
+          </div>
+
+          <!-- Barra de Progreso y Confirmación -->
+          <div class="p-3 bg-light border rounded mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+              <span class="small fw-bold text-secondary d-block mb-1">Progreso de evaluación: <span id="progressText" class="text-danger">0 de 3 criterios evaluados</span></span>
+              <div class="progress" style="width: 200px; height: 8px;">
+                <div id="progressBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%;"></div>
+              </div>
+            </div>
+            <div>
+              <button id="btnConfirmEval" class="btn btn-secondary px-4" disabled onclick="confirmEvaluation()">
+                <i class="bi bi-check-circle me-1"></i>Confirmar Evaluación
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Estado para llevar la cuenta de criterios evaluados
+    const evaluatedCriteria = { 1: false, 2: false, 3: false };
+
+    function selectLevel(criterionNum, element) {
+      // Remover selección previa en el mismo criterio
+      const parentRow = element.closest('.row');
+      parentRow.querySelectorAll('.level-option').forEach(opt => opt.classList.remove('selected'));
+      
+      // Marcar el actual
+      element.classList.add('selected');
+      evaluatedCriteria[criterionNum] = true;
+
+      updateProgress();
+    }
+
+    function updateProgress() {
+      let count = 0;
+      for (let key in evaluatedCriteria) {
+        if (evaluatedCriteria[key]) count++;
+      }
+
+      const progressText = document.getElementById('progressText');
+      const progressBar = document.getElementById('progressBar');
+      const btnConfirm = document.getElementById('btnConfirmEval');
+
+      progressText.innerText = count + " de 3 criterios evaluados";
+      const pct = (count / 3) * 100;
+      progressBar.style.width = pct + "%";
+
+      if (count === 3) {
+        progressText.className = "text-success fw-bold";
+        progressBar.className = "progress-bar bg-success";
+        btnConfirm.disabled = false;
+        btnConfirm.className = "btn btn-primary px-4";
+      } else {
+        progressText.className = "text-danger";
+        progressBar.className = "progress-bar bg-danger";
+        btnConfirm.disabled = true;
+        btnConfirm.className = "btn btn-secondary px-4";
+      }
+    }
+
+    function updateEvalMode() {
+      const mode = document.getElementById('evalTypeSelect').value;
+      const mainTitle = document.getElementById('evalMainTitle');
+      const noticeBadge = document.getElementById('anonymousNoticeBadge');
+
+      if (mode === 'autoevaluacion') {
+        mainTitle.innerText = "Autoevaluación: Actividad 3 (Tu propia entrega)";
+        noticeBadge.innerHTML = '<i class="bi bi-shield-lock-fill me-1"></i> Tu identidad no será visible';
+      } else {
+        mainTitle.innerText = "Coevaluación: Actividad 3 (Entrega de compañero)";
+        noticeBadge.innerHTML = '<i class="bi bi-eye-slash-fill me-1"></i> Evaluación anónima (Sin nombre de evaluado)';
+      }
+    }
+
+    function confirmEvaluation() {
+      if (confirm("¿Estás seguro de confirmar tu evaluación? Una vez enviada no se podrá modificar.")) {
+        alert("¡Evaluación registrada y confirmada con éxito!");
+        location.reload();
+      }
+    }
+  </script>
+</body>
+</html>
